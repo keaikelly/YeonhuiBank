@@ -4,6 +4,8 @@ package com.db.bank.domain.entity;
 import com.db.bank.domain.enums.account.*;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,19 +25,15 @@ public class Account {
     @Column(nullable = false, unique = true, length = 30)
     private String accountNum;
 
-    // 계좌 잔액
-    @Column(nullable = false)
-    private Long balance;
+    // 계좌 잔액 최초 0
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    // 계좌 타입 (체크카드, 예금 등)
+    // 기본값 NORMAL (일반 사용자 계좌)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private AccountType type;
+    private AccountType accountType = AccountType.NORMAL;
 
-    // 계좌 상태 (활성/해지 등)
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AccountStatus status;
 
     // 계좌 생성일
     @Column(nullable = false)

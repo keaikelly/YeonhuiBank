@@ -13,18 +13,18 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(
-        name = "user",
-        indexes = {
-                @Index(name = "idx_user_userId", columnList = "userId")
-        },
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "user",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_user_userId", columnNames = "userId")
+        },
+        indexes = {
+                @Index(name = "idx_user_userId", columnList = "userId")
         }
 )
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,11 +45,7 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    // User : Account = 1 : N
+    //User : Account = 1 : N
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Account> accounts;
-
-
-
-
 }
