@@ -21,7 +21,7 @@ public class Account {
 
     // 예: 123-456-789012
     @Column(nullable = false, unique = true, length = 30)
-    private String accountNumber;
+    private String accountNum;
 
     // 계좌 잔액
     @Column(nullable = false)
@@ -41,8 +41,8 @@ public class Account {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    // 사용자와 FK (User 하나가 여러 계좌) 아직 user 없음
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private User user;
+    // 사용자와 FK (User 하나가 여러 계좌) 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }
