@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "transfer_limit")
 
-public class Transfer_limit {
+public class TransferLimit {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,7 +38,7 @@ public class Transfer_limit {
     private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private TransferStatus status;
 
     @Column(nullable = true, length = 255)
@@ -49,7 +49,7 @@ public class Transfer_limit {
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false,
-            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime updatedAt;
 
 }
