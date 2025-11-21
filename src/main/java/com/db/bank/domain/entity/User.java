@@ -27,13 +27,13 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "user_id")
     private Long id;
 
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "login_id", nullable = false, length = 50, unique = true)
     private String userId;
 
     @Column(nullable = false, length = 50)
