@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "transaction_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,6 +27,7 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "to_account_num", nullable = false)
     private Account toAccount;
+
     // 거래 타입: 입금/출금/이체/수수료
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
