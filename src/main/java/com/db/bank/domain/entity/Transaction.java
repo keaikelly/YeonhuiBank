@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,9 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TransactionType type;
+
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal amount;
 
     // 거래 상태: 보류/성공/실패
     @Enumerated(EnumType.STRING)
