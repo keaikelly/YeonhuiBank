@@ -4,6 +4,8 @@ import com.db.bank.domain.enums.scheduledTransaction.Frequency;
 import com.db.bank.domain.enums.scheduledTransaction.Status;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -34,12 +36,12 @@ public class ScheduledTransaction {
 
     //생성 고객(user_id)
     @ManyToOne(fetch = FetchType.LAZY)
-    @Column(name = "created_by", nullable = false)
+    @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
     //이체 금액
-    @Column(nullable = false)
-    private Double amount;
+    @Column(nullable = false, precision = 18, scale = 2)
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
