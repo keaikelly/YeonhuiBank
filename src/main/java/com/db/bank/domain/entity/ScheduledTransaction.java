@@ -8,6 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -78,7 +79,8 @@ public class ScheduledTransaction {
     private LocalDateTime updatedAt;
 
 
-
+    @Column(name = "run_time", nullable = false)
+    private LocalTime runTime;
 
 
 

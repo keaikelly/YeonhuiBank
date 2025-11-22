@@ -1,5 +1,5 @@
 package com.db.bank.domain.enums.scheduledTransaction;
 
 public enum Frequency {
-    daily, weekly, monthly, quarterly, yearly, custom
+    DAILY, WEEKLY, MONTHLY,ONCE, YEARLY, CUSTOM, QUARTERLY
 }
