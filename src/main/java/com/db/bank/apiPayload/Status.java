@@ -32,6 +32,7 @@ public enum Status {
 
     //로그
     INVALID_LOG_ARGUMENT("404", "FAILURE", "로그 기록을 위한 transaction/account/actorUser는 null일 수 없습니다."),
+    LOG_READ_SUCCESS("200", "SUCCESS","로그 조회에 성공했습니다."),
     //사용자
     USER_NON_PRESENT("404", "FAILURE", "존재하지 않는 사용자입니다."),
     INVALID_LOGIN("401","FAILURE","아이디 또는 비밀번호가 일치하지 않습니다");
