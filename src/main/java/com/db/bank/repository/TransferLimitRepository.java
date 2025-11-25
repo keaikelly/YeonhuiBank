@@ -14,7 +14,7 @@ public interface TransferLimitRepository extends JpaRepository<TransferLimit, Lo
     Optional<TransferLimit> findByAccount(Account account);
 
     // 2. 계좌번호와 이체한도의 상태(active)로 이체한도조회
-    Optional<TransferLimit> findByAccountAndStatus(Account account, TransferStatus status);
+    List<TransferLimit> findByAccountAndStatus(Account account, TransferStatus status);
 
     // 3. 특정계좌의 모든 이체한도 조회
     List<TransferLimit> findAllByAccount(Account account);

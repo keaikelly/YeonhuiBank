@@ -22,9 +22,9 @@ public class TransferLimitService {
     private final TransferLimitRepository transferLimitRepository;
     private final AccountRepository accountRepository;
 
-    // 특정계좌의 활성이체한도 조회
+    // 특정계좌의 활성이체한도 조회 (하루, 건당이 리스트로)
     @Transactional(readOnly = true)
-    public Optional<TransferLimit> getActiveTransferLimit(String accountNum) {
+    public List<TransferLimit> getActiveTransferLimit(String accountNum) {
         //계좌번호로 Account 엔티티 조회
         Account account =accountRepository.findByAccountNum(accountNum)
                 .orElseThrow(()-> new AccountException.AccountNonExistsException("계좌없음:"+accountNum));
