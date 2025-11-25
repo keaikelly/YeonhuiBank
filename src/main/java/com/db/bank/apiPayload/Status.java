@@ -13,6 +13,10 @@ public enum Status {
     ACCOUNT_FORBIDDEN("403", "FAILURE", "접근 불가 계좌입니다."),
     ACCOUNT_ALREADY_PRESENT("409", "FAILURE", "이미 존재하는 계좌입니다."),
     ACCOUNT_NON_PRESENT("404", "FAILURE", "존재하지 않는 계좌입니다."),
+    INVALID_ACCOUNT_AMOUNT("400", "FAILURE", "계좌 거래 금액이 유효하지 않습니다."),
+    INVALID_ACCOUNT_ARGUMENT("400", "FAILURE", "계좌 요청 파라미터가 유효하지 않습니다."),
+    INSUFFICIENT_BALANCE("409", "FAILURE", "계좌 잔액이 부족합니다."),
+
     //예약 이체
     INVALID_SCHEDULED_TRANSACTION_AMOUNT("400", "FAILURE", "예약이체 금액은 0보다 커야 합니다."),
     INVALID_SCHEDULED_TRANSACTION_STARTDATE("400", "FAILURE", "예약이체 시작일은 필수입니다."),
