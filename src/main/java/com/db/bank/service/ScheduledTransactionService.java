@@ -30,7 +30,7 @@ public class ScheduledTransactionService {
     private final ScheduledTransactionRepository scheduledTransactionRepository;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
-
+    private final TransactionService transactionService;
     // ================== 1. 예약이체 생성 ==================
 
     @Transactional
@@ -43,6 +43,7 @@ public class ScheduledTransactionService {
             LocalDate startDate,
             LocalDate endDate,
             LocalTime runTime,
+            String rruleString,
             String memo
     ) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -93,6 +94,7 @@ public class ScheduledTransactionService {
                 .memo(memo)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
+                .rrule(rruleString)
                 .build();
 
         return scheduledTransactionRepository.save(schedule);
@@ -266,10 +268,56 @@ public class ScheduledTransactionService {
                 continue;
             }
 
-            // TODO: 여기서 실제 이체(TransactionService 호출) + LogService 호출 등 처리
 
+            try {
+                // 실제 이체 수행 (기존 TransactionService 재사용)
+                transactionService.transfer(
+                        schedule.getCreatedBy().getId(),
+                        schedule.getFromAccount().getAccountNum(),
+                        schedule.getToAccount().getAccountNum(),
+                        schedule.getAmount(),
+                        "[예약이체] " + (schedule.getMemo() != null ? schedule.getMemo() : "")
+                );
+
+                // 실행 시간 기록
+                schedule.setLastRunAt(now);
+
+                // 다음 실행 시간 계산
+                LocalDateTime nextRun = recalculateNextRunAt(schedule);
+
+                // 다음 실행 시간이 없거나(endDate 이후 등) 더 이상 기간을 넘으면 완료 처리
+                if (nextRun == null ||
+                        (schedule.getEndDate() != null && nextRun.toLocalDate().isAfter(schedule.getEndDate()))) {
+                    schedule.setStatus(Status.COMPLETED);
+                    schedule.setNextRunAt(null);
+                } else {
+                    schedule.setNextRunAt(nextRun);
+                }
+
+                schedule.setUpdatedAt(now);
+
+            } catch (Exception e) {
+                schedule.setStatus(Status.FAILED);
+                schedule.setLastRunAt(now);
+
+                // 재시도 전략 1: 다음날 같은 시간에 재시도
+                LocalDateTime retryAt = now.plusDays(1);
+
+                // 만약 endDate 넘으면 재시도 X → COMPLETED 처리
+                if (schedule.getEndDate() != null && retryAt.toLocalDate().isAfter(schedule.getEndDate())) {
+                    schedule.setStatus(Status.COMPLETED);
+                    schedule.setNextRunAt(null);
+                } else {
+                    // 재시도 시간 지정
+                    schedule.setNextRunAt(retryAt);
+                }
+
+                schedule.setUpdatedAt(now);
+            }
         }
     }
+        
+
 
     // ================== 5. nextRunAt 계산 헬퍼 ==================
 
@@ -279,10 +327,66 @@ public class ScheduledTransactionService {
         if (base == null) {
             base = schedule.getStartDate().atTime(9, 0);
         }
-        return calculateNextRunAt(schedule.getFrequency(), base);
+        return calculateNextRunAt(schedule.getFrequency(), schedule.getRrule(), base);
+    }
+    private LocalDateTime calculateNextRunAtCustom(String rrule, LocalDateTime base) {
+        if (rrule == null || rrule.isBlank()) return null;
+
+        // "FREQ=WEEKLY;INTERVAL=2" 같은 문자열 파싱
+        String[] parts = rrule.split(";");
+        String freq = null;
+        Integer interval = null;
+        Integer byMonthDay = null;
+
+        for (String part : parts) {
+            String[] kv = part.split("=");
+            if (kv.length != 2) continue;
+            String key = kv[0].trim().toUpperCase();
+            String value = kv[1].trim().toUpperCase();
+
+            switch (key) {
+                case "FREQ":
+                    freq = value; // DAILY, WEEKLY, MONTHLY 등
+                    break;
+                case "INTERVAL":
+                    interval = Integer.parseInt(value); // 1,2,3...
+                    break;
+                case "BYMONTHDAY":
+                    byMonthDay = Integer.parseInt(value); // 1~31
+                    break;
+            }
+        }
+
+        if (freq == null) return null;
+        if (interval == null) interval = 1;
+
+        switch (freq) {
+            case "DAILY":
+                return base.plusDays(interval);
+            case "WEEKLY":
+                return base.plusWeeks(interval);
+            case "MONTHLY":
+                if (byMonthDay != null) {
+                    // 다음 달 같은 시간, day만 BYMONTHDAY로 맞추기
+                    LocalDateTime nextMonth = base.plusMonths(interval);
+                    int lastDayOfMonth = nextMonth.toLocalDate().lengthOfMonth();
+                    int day = Math.min(byMonthDay, lastDayOfMonth);
+                    return LocalDateTime.of(
+                            nextMonth.getYear(),
+                            nextMonth.getMonth(),
+                            day,
+                            base.getHour(),
+                            base.getMinute()
+                    );
+                } else {
+                    return base.plusMonths(interval);
+                }
+            default:
+                return null;
+        }
     }
 
-    private LocalDateTime calculateNextRunAt(Frequency frequency, LocalDateTime base) {
+    private LocalDateTime calculateNextRunAt(Frequency frequency, String rrule,LocalDateTime base) {
         if (frequency == null) return null;
 
         switch (frequency) {
@@ -295,9 +399,11 @@ public class ScheduledTransactionService {
                 return base.plusWeeks(1);
             case MONTHLY:
                 return base.plusMonths(1);
+            case CUSTOM:
+                return calculateNextRunAtCustom(rrule, base);
             default:
-                // CUSTOM 등은 rrule 기반 계산이 필요할 수 있음
                 return null;
+
         }
     }
 }

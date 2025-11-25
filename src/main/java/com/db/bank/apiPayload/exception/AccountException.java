@@ -20,6 +20,18 @@ public class AccountException extends RuntimeException {
             super(message);
         }
     }
+    public static class InvalidAccountAmountException extends AccountException {
+        public InvalidAccountAmountException(String message) { super(message); }
+    }
+
+    public static class InvalidAccountArgumentException extends AccountException {
+        public InvalidAccountArgumentException(String message) { super(message); }
+    }
+
+    public static class InsufficientBalanceException extends AccountException {
+        public InsufficientBalanceException(String message) { super(message); }
+    }
+
 
     
 }
