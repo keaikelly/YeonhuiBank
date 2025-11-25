@@ -21,6 +21,22 @@ public class AccountExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleAccountException(AccountException.UnauthorizedAccountAccessException ex){
         return new ResponseEntity<>(ApiResponse.onFailure(Status.ACCOUNT_FORBIDDEN), HttpStatus.FORBIDDEN);
     }
+    @ExceptionHandler(AccountException.InvalidAccountAmountException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidAmount(AccountException.InvalidAccountAmountException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.onFailure(Status.INVALID_ACCOUNT_AMOUNT));
+    }
 
+    @ExceptionHandler(AccountException.InvalidAccountArgumentException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidArgument(AccountException.InvalidAccountArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.onFailure(Status.INVALID_ACCOUNT_ARGUMENT));
+    }
+
+    @ExceptionHandler(AccountException.InsufficientBalanceException.class)
+    public ResponseEntity<ApiResponse<?>> handleInsufficientBalance(AccountException.InsufficientBalanceException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.onFailure(Status.INSUFFICIENT_BALANCE));
+    }
 
 }

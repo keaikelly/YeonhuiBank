@@ -37,5 +37,6 @@ public interface AccountRepository extends JpaRepository<Account, Long>  {
     @Query("select a from Account a where a.accountNum = :accountNum")
     Optional<Account> findByAccountNumForUpdate(String accountNum);
 
-
+    Optional<Account> findExternalInAccount();
+    Optional<Account> findExternalOutAccount();
 }
