@@ -1,7 +1,7 @@
 package com.db.bank.domain.entity;
 
 import com.db.bank.domain.enums.scheduledTransaction.Frequency;
-import com.db.bank.domain.enums.scheduledTransaction.Status;
+import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,7 +46,7 @@ public class ScheduledTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Status status;
+    private ScheduledStatus scheduledStatus;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

@@ -1,5 +1,5 @@
 package com.db.bank.domain.enums.scheduledTransaction;
 
-public enum Status {
+public enum ScheduledStatus {
     ACTIVE, PAUSED, CANCELED, COMPLETED, FAILED
 }

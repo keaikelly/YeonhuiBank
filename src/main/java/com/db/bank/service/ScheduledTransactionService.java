@@ -7,7 +7,7 @@ import com.db.bank.domain.entity.Account;
 import com.db.bank.domain.entity.ScheduledTransaction;
 import com.db.bank.domain.entity.User;
 import com.db.bank.domain.enums.scheduledTransaction.Frequency;
-import com.db.bank.domain.enums.scheduledTransaction.Status;
+import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import com.db.bank.repository.AccountRepository;
 import com.db.bank.repository.ScheduledTransactionRepository;
 import com.db.bank.repository.UserRepository;
@@ -72,7 +72,7 @@ public class ScheduledTransactionService {
 
         // 중복 예약이체 존재 여부 체크
         boolean exists = scheduledTransactionRepository
-                .existsByFromAccountIdAndToAccountIdAndStatus(fromAccountId, toAccountId, Status.ACTIVE);
+                .existsByFromAccountIdAndToAccountIdAndStatus(fromAccountId, toAccountId, ScheduledStatus.ACTIVE);
         if (exists) {
 
             throw new ScheduledTransactionException.ScheduledTransactionAlreadyExistsException("동일한 출금/입금 계좌로 이미 활성화된 예약이체가 존재합니다.");
@@ -85,7 +85,7 @@ public class ScheduledTransactionService {
                 .toAccount(toAccount)
                 .createdBy(user)
                 .amount(amount)
-                .status(Status.ACTIVE)
+                .scheduledStatus(ScheduledStatus.ACTIVE)
                 .frequency(frequency)
                 .startDate(startDate)
                 .endDate(endDate)
@@ -113,12 +113,12 @@ public class ScheduledTransactionService {
     @Transactional(readOnly = true)
     public Page<ScheduledTransaction> getMySchedulesByStatus(
             Long userId,
-            Status status,
+            ScheduledStatus scheduledStatus,
             Pageable pageable
     ) {
         return scheduledTransactionRepository.findByCreatedByIdAndStatusOrderByCreatedAtDesc(
                 userId,
-                status,
+                scheduledStatus,
                 pageable
         );
     }
@@ -164,7 +164,7 @@ public class ScheduledTransactionService {
         ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
 
         // 상태 검사 (완료/취소된 건 수정 불가 등 정책)
-        if (schedule.getStatus() == Status.CANCELED || schedule.getStatus() == Status.COMPLETED) {
+        if (schedule.getScheduledStatus() == ScheduledStatus.CANCELED || schedule.getScheduledStatus() == ScheduledStatus.COMPLETED) {
             throw new ScheduledTransactionException.ScheduledTransactionAlreadyFinishedException("이미 종료된 예약이체는 수정할 수 없습니다.");
         }
 
@@ -203,11 +203,11 @@ public class ScheduledTransactionService {
     public void cancelSchedule(Long userId, Long scheduleId) {
         ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
 
-        if (schedule.getStatus() == Status.CANCELED) {
+        if (schedule.getScheduledStatus() == ScheduledStatus.CANCELED) {
             return; // 이미 취소된 경우 그냥 무시
         }
 
-        schedule.setStatus(Status.CANCELED);
+        schedule.setScheduledStatus(ScheduledStatus.CANCELED);
         schedule.setNextRunAt(null);
         schedule.setUpdatedAt(LocalDateTime.now());
     }
@@ -217,11 +217,11 @@ public class ScheduledTransactionService {
     public void pauseSchedule(Long userId, Long scheduleId) {
         ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
 
-        if (schedule.getStatus() != Status.ACTIVE) {
+        if (schedule.getScheduledStatus() != ScheduledStatus.ACTIVE) {
             throw new ScheduledTransactionException.InvalidScheduleStatusForPauseException("ACTIVE 상태의 예약이체만 일시정지할 수 있습니다.");
         }
 
-        schedule.setStatus(Status.PAUSED);
+        schedule.setScheduledStatus(ScheduledStatus.PAUSED);
         schedule.setUpdatedAt(LocalDateTime.now());
     }
 
@@ -230,11 +230,11 @@ public class ScheduledTransactionService {
     public void resumeSchedule(Long userId, Long scheduleId) {
         ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
 
-        if (schedule.getStatus() != Status.PAUSED) {
+        if (schedule.getScheduledStatus() != ScheduledStatus.PAUSED) {
             throw new ScheduledTransactionException.InvalidScheduleStatusForResumeException("PAUSED 상태의 예약이체만 재개할 수 있습니다.");
         }
 
-        schedule.setStatus(Status.ACTIVE);
+        schedule.setScheduledStatus(ScheduledStatus.ACTIVE);
         schedule.setNextRunAt(recalculateNextRunAt(schedule));
         schedule.setUpdatedAt(LocalDateTime.now());
     }
@@ -250,7 +250,7 @@ public class ScheduledTransactionService {
         // ACTIVE + nextRunAt <= now 인 예약이체 중 최대 100개
         List<ScheduledTransaction> dueList =
                 scheduledTransactionRepository.findTop100ByStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
-                        Status.ACTIVE,
+                        ScheduledStatus.ACTIVE,
                         now
                 );
 
@@ -262,7 +262,7 @@ public class ScheduledTransactionService {
             }
             if (schedule.getEndDate() != null && today.isAfter(schedule.getEndDate())) {
                 // 기간 넘었으면 COMPLETED 처리
-                schedule.setStatus(Status.COMPLETED);
+                schedule.setScheduledStatus(ScheduledStatus.COMPLETED);
                 schedule.setNextRunAt(null);
                 schedule.setUpdatedAt(now);
                 continue;
@@ -288,7 +288,7 @@ public class ScheduledTransactionService {
                 // 다음 실행 시간이 없거나(endDate 이후 등) 더 이상 기간을 넘으면 완료 처리
                 if (nextRun == null ||
                         (schedule.getEndDate() != null && nextRun.toLocalDate().isAfter(schedule.getEndDate()))) {
-                    schedule.setStatus(Status.COMPLETED);
+                    schedule.setScheduledStatus(ScheduledStatus.COMPLETED);
                     schedule.setNextRunAt(null);
                 } else {
                     schedule.setNextRunAt(nextRun);
@@ -297,7 +297,7 @@ public class ScheduledTransactionService {
                 schedule.setUpdatedAt(now);
 
             } catch (Exception e) {
-                schedule.setStatus(Status.FAILED);
+                schedule.setScheduledStatus(ScheduledStatus.FAILED);
                 schedule.setLastRunAt(now);
 
                 // 재시도 전략 1: 다음날 같은 시간에 재시도
@@ -305,7 +305,7 @@ public class ScheduledTransactionService {
 
                 // 만약 endDate 넘으면 재시도 X → COMPLETED 처리
                 if (schedule.getEndDate() != null && retryAt.toLocalDate().isAfter(schedule.getEndDate())) {
-                    schedule.setStatus(Status.COMPLETED);
+                    schedule.setScheduledStatus(ScheduledStatus.COMPLETED);
                     schedule.setNextRunAt(null);
                 } else {
                     // 재시도 시간 지정

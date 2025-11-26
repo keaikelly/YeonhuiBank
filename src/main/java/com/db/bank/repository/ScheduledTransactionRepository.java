@@ -1,7 +1,7 @@
 package com.db.bank.repository;
 
 import com.db.bank.domain.entity.ScheduledTransaction;
-import com.db.bank.domain.enums.scheduledTransaction.Status;
+import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,7 +27,7 @@ public interface ScheduledTransactionRepository extends JpaRepository<ScheduledT
     // 3. 유저 + 상태 (활성/취소 필터)
     Page<ScheduledTransaction> findByCreatedByIdAndStatusOrderByCreatedAtDesc(
             Long userId,
-            Status status,
+            ScheduledStatus scheduledStatus,
             Pageable pageable
     );
 
@@ -35,20 +35,20 @@ public interface ScheduledTransactionRepository extends JpaRepository<ScheduledT
 
     // 4. 지금 실행해야 할 예약이체들 가져오기
     List<ScheduledTransaction> findByStatusAndNextRunAtLessThanEqual(
-            Status status,
+            ScheduledStatus scheduledStatus,
             LocalDateTime now
     );
 
     // 5. 날짜 기반 (start_date ~ end_date 안에 있는 ACTIVE 예약들)
     List<ScheduledTransaction> findByStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
-            Status status,
+            ScheduledStatus scheduledStatus,
             LocalDate startDate,
             LocalDate endDate
     );
 
     // 6. 현재 실행해야할 예약이체 모음
     List<ScheduledTransaction> findTop100ByStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
-            Status status,
+            ScheduledStatus scheduledStatus,
             LocalDateTime now
     );
 
@@ -56,7 +56,7 @@ public interface ScheduledTransactionRepository extends JpaRepository<ScheduledT
     boolean existsByFromAccountIdAndToAccountIdAndStatus(
             Long fromAccountId,
             Long toAccountId,
-            Status status
+            ScheduledStatus scheduledStatus
     );
 
 }

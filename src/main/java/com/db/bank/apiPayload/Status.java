@@ -29,6 +29,10 @@ public enum Status {
     INVALID_SCHEDULE_STATUS_FOR_PAUSE("409", "FAILURE", "ACTIVE 상태의 예약이체만 일시정지할 수 있습니다."),
     INVALID_SCHEDULE_STATUS_FOR_RESUME("409", "FAILURE", "PAUSED 상태의 예약이체만 재개할 수 있습니다."),
     SCHEDULED_TRANSACTION_NOT_FOUND("404", "FAILURE", "예약이체를 찾을 수 없습니다."),
+    SCHEDULE_CREATE_SUCCESS("201","SUCCESS","예약 이체 생성을 성공하였습니다."),
+    SCHEDULE_READ_SUCCESS("200","SUCCESS","예약 이체 조회를 성공하였습니다."),
+    SCHEDULE_UPDATE_SUCCESS("200", "SUCCESS","예약 이체 수정을 성공하였습니다."),
+    SCHEDULE_CANCEL_SUCCESS("204","SUCCESS","예약 이체 취소를 성공하였습니다."),
 
     //로그
     INVALID_LOG_ARGUMENT("404", "FAILURE", "로그 기록을 위한 transaction/account/actorUser는 null일 수 없습니다."),
@@ -39,8 +43,8 @@ public enum Status {
 
     //트랜잭션
     TRANSACTION_NON_PRESENT ("404", "FAILURE", "존재하지 않는 트랜잭션 입니다."),
-    TRANSACTION_CREATE_SUCCESS("201","SUCCESS","거래 생성 성공"),
-    TRANSACTION_READ_SUCCESS("200", "SUCCESS","거래 조회 성공");
+    TRANSACTION_CREATE_SUCCESS("201","SUCCESS","거래 생성을 성공하였습니다."),
+    TRANSACTION_READ_SUCCESS("200", "SUCCESS","거래 조회를 성공하였습니다.");
 
 
     private final String code;
