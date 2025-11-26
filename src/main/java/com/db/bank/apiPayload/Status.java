@@ -39,7 +39,11 @@ public enum Status {
     LOG_READ_SUCCESS("200", "SUCCESS","로그 조회에 성공했습니다."),
     //사용자
     USER_NON_PRESENT("404", "FAILURE", "존재하지 않는 사용자입니다."),
-    INVALID_LOGIN("401","FAILURE","아이디 또는 비밀번호가 일치하지 않습니다"),
+    USER_INVALID_LOGIN("401","FAILURE","아이디 또는 비밀번호가 일치하지 않습니다"),
+    USER_SIGNUP_SUCCESS("201", "SUCCESS", "회원가입을 완료했습니다."),
+    USER_LOGIN_SUCCESS("200", "SUCCESS", "로그인을 완료했습니다."),
+    USER_CHECK_ID("200", "SUCCESS", "사용 가능한 아이디입니다."),
+    USER_READ_SUCCESS("200", "SUCCESS", "유저 정보를 성공적으로 조회했습니다."),
 
     //트랜잭션
     TRANSACTION_NON_PRESENT ("404", "FAILURE", "존재하지 않는 트랜잭션 입니다."),

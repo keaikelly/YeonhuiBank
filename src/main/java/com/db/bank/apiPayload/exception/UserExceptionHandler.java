@@ -16,7 +16,7 @@ public class UserExceptionHandler{
 
     @ExceptionHandler(UserException.InvalidLoginException.class)
     public ResponseEntity<ApiResponse<?>> handleInvalidLoginException(UserException.InvalidLoginException ex) {
-        return new ResponseEntity<>(ApiResponse.onFailure(Status.INVALID_LOGIN), HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>(ApiResponse.onFailure(Status.USER_INVALID_LOGIN), HttpStatus.UNAUTHORIZED);
     }
 
 }
