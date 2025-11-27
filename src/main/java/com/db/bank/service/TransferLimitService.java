@@ -68,5 +68,16 @@ public class TransferLimitService {
         // 계좌의 상태 이체한도 리스트 반환
         return transferLimitRepository.findAllByAccount(account);
     }
+    @Transactional
+    public TransferLimit updateEndDate(Long limitId, LocalDateTime newEndDate) {
+        TransferLimit limit = transferLimitRepository.findById(limitId)
+                .orElseThrow(() -> new IllegalArgumentException("이체 한도를 찾을 수 없습니다. id=" + limitId));
+
+        limit.setEndDate(newEndDate);
+        limit.setUpdatedAt(LocalDateTime.now());
+
+        return limit;
+    }
+
 
 }

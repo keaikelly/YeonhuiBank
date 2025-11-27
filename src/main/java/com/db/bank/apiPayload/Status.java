@@ -49,7 +49,14 @@ public enum Status {
     //트랜잭션
     TRANSACTION_NON_PRESENT ("404", "FAILURE", "존재하지 않는 트랜잭션 입니다."),
     TRANSACTION_CREATE_SUCCESS("201","SUCCESS","거래 생성을 성공하였습니다."),
-    TRANSACTION_READ_SUCCESS("200", "SUCCESS","거래 조회를 성공하였습니다.");
+    TRANSACTION_READ_SUCCESS("200", "SUCCESS","거래 조회를 성공하였습니다."),
+
+    //이체 한도
+    TRANSFER_LIMIT_CREATE_SUCCESS("201", "SUCCESS","이체 한도 생성/수정 성공"),
+    TRANSFER_LIMIT_READ_SUCCESS("200", "SUCCESS","활성 이체 한도 조회 성공"),
+    TRANSFER_LIMIT_HISTORY_READ_SUCCESS("200", "SUCCESS", "이체 한도 이력 조회 성공"),
+    TRANSFER_LIMIT_ENDDATE_UPDATE_SUCCESS("200", "SUCCESS","이체 한도 종료일 수정 성공");
+
 
 
     private final String code;
