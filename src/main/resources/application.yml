@@ -4,6 +4,12 @@ spring:
     username: ${LOCAL_USERNAME}
     password: ${LOCAL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  spring:
+    sql:
+      init:
+        mode: always
+        schema-locations: classpath:schema.sql
+
 
   jpa:
     hibernate:
