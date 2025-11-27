@@ -7,6 +7,8 @@ import com.db.bank.domain.entity.ScheduledTransaction;
 import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import com.db.bank.service.ScheduledTransactionService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/scheduled-transactions")
 @RequiredArgsConstructor
+@Tag(name = "🕰️Scheduled Transaction", description = "예약 이체 관련 API")
 public class ScheduledTransactionController {
 
     private final ScheduledTransactionService scheduledTransactionService;
@@ -24,6 +27,7 @@ public class ScheduledTransactionController {
     // POST /api/scheduled-transactions
     // ====================================
     @PostMapping
+    @Operation(summary = "예약이체 생성")
     public ApiResponse<ScheduledTransactionDto.Response> create(@RequestBody ScheduledTransactionDto.CreateRequest req) {
 
         ScheduledTransaction st = scheduledTransactionService.createSchedule(
@@ -48,6 +52,7 @@ public class ScheduledTransactionController {
     // GET /api/scheduled-transactions/my?userId=&page=
     // ====================================
     @GetMapping("/my")
+    @Operation(summary = "내가 만든 예약이체 목록")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getMySchedules(
             @RequestParam Long userId,
             Pageable pageable
@@ -65,6 +70,7 @@ public class ScheduledTransactionController {
     // GET /api/scheduled-transactions/my/status?userId= &status=ACTIVE
     // ====================================
     @GetMapping("/my/status")
+    @Operation(summary = "상태별 예약이체 조회")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getMySchedulesByStatus(
             @RequestParam Long userId,
             @RequestParam ScheduledStatus status,
@@ -84,6 +90,7 @@ public class ScheduledTransactionController {
     // GET /api/scheduled-transactions/account/{fromAccountId}
     // ====================================
     @GetMapping("/account/{fromAccountId}")
+    @Operation(summary = "특정 출금 계좌 기준 예약 목록")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getByFromAccount(
             @PathVariable Long fromAccountId,
             Pageable pageable
@@ -103,6 +110,7 @@ public class ScheduledTransactionController {
     // GET /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
     @GetMapping("/{scheduleId}")
+    @Operation(summary = "예약 이체 단건 조회")
     public ApiResponse<ScheduledTransactionDto.Response> detail(
             @RequestParam Long userId,
             @PathVariable Long scheduleId
@@ -121,6 +129,7 @@ public class ScheduledTransactionController {
     // PATCH /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
     @PatchMapping("/{scheduleId}")
+    @Operation(summary = "예약 이체 수정")
     public ApiResponse<ScheduledTransactionDto.Response> update(
             @RequestParam Long userId,
             @PathVariable Long scheduleId,
@@ -145,6 +154,7 @@ public class ScheduledTransactionController {
     // DELETE /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
     @DeleteMapping("/{scheduleId}")
+    @Operation(summary = "예약 이체 취소")
     public ApiResponse<String> cancel(
             @RequestParam Long userId,
             @PathVariable Long scheduleId
@@ -160,6 +170,7 @@ public class ScheduledTransactionController {
     // POST /api/scheduled-transactions/{scheduleId}/pause?userId=
     // ====================================
     @PostMapping("/{scheduleId}/pause")
+    @Operation(summary = "예약 이체 일시 정지")
     public ApiResponse<ScheduledTransactionDto.Response> pause(
             @RequestParam Long userId,
             @PathVariable Long scheduleId
@@ -175,6 +186,7 @@ public class ScheduledTransactionController {
     // POST /api/scheduled-transactions/{scheduleId}/resume?userId=
     // ====================================
     @PostMapping("/{scheduleId}/resume")
+    @Operation(summary = "예약 이체 재개")
     public ApiResponse<ScheduledTransactionDto.Response> resume(
             @RequestParam Long userId,
             @PathVariable Long scheduleId

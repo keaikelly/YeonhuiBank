@@ -30,6 +30,7 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final LogService logService;
+    private final AbnTransferService abnTransferService;
     private Account getExternalInAccount() {
         return accountRepository.findByAccountType(EXTERNAL_IN)
                 .orElseThrow(() -> new AccountException.AccountNonExistsException("EXTERNAL_IN 계좌가 없습니다."));
@@ -140,7 +141,7 @@ public class TransactionService {
 
         // 로그 기록
         logService.logWithdraw(tx, fromAccount, before, after, actor);
-
+        abnTransferService.detectAbnTransfer(tx);
         return tx;
     }
 
@@ -205,7 +206,7 @@ public class TransactionService {
         // 로그 기록 (보낸 쪽 / 받은 쪽 따로)
         logService.logTransferDebit(tx, fromAccount, fromBefore, fromAfter, actor);
         logService.logTransferCredit(tx, toAccount, toBefore, toAfter, actor);
-
+        abnTransferService.detectAbnTransfer(tx);
         return tx;
     }
 

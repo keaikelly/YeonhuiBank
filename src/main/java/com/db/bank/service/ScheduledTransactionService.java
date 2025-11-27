@@ -72,7 +72,7 @@ public class ScheduledTransactionService {
 
         // 중복 예약이체 존재 여부 체크
         boolean exists = scheduledTransactionRepository
-                .existsByFromAccountIdAndToAccountIdAndStatus(fromAccountId, toAccountId, ScheduledStatus.ACTIVE);
+                .existsByFromAccountIdAndToAccountIdAndScheduledStatus(fromAccountId, toAccountId, ScheduledStatus.ACTIVE);
         if (exists) {
 
             throw new ScheduledTransactionException.ScheduledTransactionAlreadyExistsException("동일한 출금/입금 계좌로 이미 활성화된 예약이체가 존재합니다.");
@@ -116,7 +116,7 @@ public class ScheduledTransactionService {
             ScheduledStatus scheduledStatus,
             Pageable pageable
     ) {
-        return scheduledTransactionRepository.findByCreatedByIdAndStatusOrderByCreatedAtDesc(
+        return scheduledTransactionRepository.findByCreatedByIdAndScheduledStatusOrderByCreatedAtDesc(
                 userId,
                 scheduledStatus,
                 pageable
@@ -249,7 +249,7 @@ public class ScheduledTransactionService {
     public void runDueSchedules(LocalDateTime now) {
         // ACTIVE + nextRunAt <= now 인 예약이체 중 최대 100개
         List<ScheduledTransaction> dueList =
-                scheduledTransactionRepository.findTop100ByStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
+                scheduledTransactionRepository.findTop100ByScheduledStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
                         ScheduledStatus.ACTIVE,
                         now
                 );

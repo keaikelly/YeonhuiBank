@@ -6,6 +6,8 @@ import com.db.bank.app.dto.AccountDto;
 import com.db.bank.apiPayload.ApiResponse;
 import com.db.bank.domain.entity.Account;
 import com.db.bank.service.AccountService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
@@ -15,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
+@Tag(name = "🏦Account", description = "계좌 관련 API")
 public class AccountController {
 
     private final AccountService accountService;
@@ -23,6 +26,7 @@ public class AccountController {
     // 1) 계좌 생성
     // ==========================
     @PostMapping
+    @Operation(summary = "계좌 생성")
     public ApiResponse<AccountDto.CreateResponse> createAccount(
             @RequestBody AccountDto.CreateRequest request
     ) {
@@ -49,6 +53,7 @@ public class AccountController {
     // 2) 특정 유저 계좌 목록 조회
     // ==========================
     @GetMapping("/user/{userId}")
+    @Operation(summary = "특정 유저 계좌 목록 조회")
     public ApiResponse<Page<AccountDto.DetailResponse>> getUserAccounts(
             @PathVariable Long userId,
             Pageable pageable
@@ -71,6 +76,7 @@ public class AccountController {
     // 3) 단일 계좌 조회 + 소유자 검증
     // ==========================
     @GetMapping("/{accountNum}/user/{userId}")
+    @Operation(summary = "단일 계좌 조회(소유자 검증)")
     public ApiResponse<AccountDto.DetailResponse> getAccountDetail(
             @PathVariable String accountNum,
             @PathVariable Long userId

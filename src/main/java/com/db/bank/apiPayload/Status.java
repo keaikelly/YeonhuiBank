@@ -33,6 +33,7 @@ public enum Status {
     SCHEDULE_READ_SUCCESS("200","SUCCESS","예약 이체 조회를 성공하였습니다."),
     SCHEDULE_UPDATE_SUCCESS("200", "SUCCESS","예약 이체 수정을 성공하였습니다."),
     SCHEDULE_CANCEL_SUCCESS("204","SUCCESS","예약 이체 취소를 성공하였습니다."),
+    SCHEDULE_RUN_READ_SUCCESS("200", "SUCCESS","예약이체 실행 이력 조회 성공"),
 
     //로그
     INVALID_LOG_ARGUMENT("404", "FAILURE", "로그 기록을 위한 transaction/account/actorUser는 null일 수 없습니다."),
@@ -52,6 +53,14 @@ public enum Status {
 
     //사유코드
     REASON_CODE_DUPLICATE("409", "FAILURE", "중복된 사유코드입니다.");
+    //이체 한도
+    TRANSFER_LIMIT_CREATE_SUCCESS("201", "SUCCESS","이체 한도 생성/수정 성공"),
+    TRANSFER_LIMIT_READ_SUCCESS("200", "SUCCESS","활성 이체 한도 조회 성공"),
+    TRANSFER_LIMIT_HISTORY_READ_SUCCESS("200", "SUCCESS", "이체 한도 이력 조회 성공"),
+    TRANSFER_LIMIT_ENDDATE_UPDATE_SUCCESS("200", "SUCCESS","이체 한도 종료일 수정 성공"),
+
+    //이상거래
+    ABN_TRANSFER_READ_SUCCESS("200","SUCCESS","이상거래 조회 성공");
 
     private final String code;
     private final String result;

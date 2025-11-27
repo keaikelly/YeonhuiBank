@@ -25,7 +25,7 @@ public interface ScheduledTransactionRepository extends JpaRepository<ScheduledT
     );
 
     // 3. 유저 + 상태 (활성/취소 필터)
-    Page<ScheduledTransaction> findByCreatedByIdAndStatusOrderByCreatedAtDesc(
+    Page<ScheduledTransaction> findByCreatedByIdAndScheduledStatusOrderByCreatedAtDesc(
             Long userId,
             ScheduledStatus scheduledStatus,
             Pageable pageable
@@ -34,26 +34,26 @@ public interface ScheduledTransactionRepository extends JpaRepository<ScheduledT
     // ================== 실행용 쿼리 (스케줄러/배치) ==================
 
     // 4. 지금 실행해야 할 예약이체들 가져오기
-    List<ScheduledTransaction> findByStatusAndNextRunAtLessThanEqual(
+    List<ScheduledTransaction> findByScheduledStatusAndNextRunAtLessThanEqual(
             ScheduledStatus scheduledStatus,
             LocalDateTime now
     );
 
     // 5. 날짜 기반 (start_date ~ end_date 안에 있는 ACTIVE 예약들)
-    List<ScheduledTransaction> findByStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+    List<ScheduledTransaction> findByScheduledStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             ScheduledStatus scheduledStatus,
             LocalDate startDate,
             LocalDate endDate
     );
 
     // 6. 현재 실행해야할 예약이체 모음
-    List<ScheduledTransaction> findTop100ByStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
+    List<ScheduledTransaction> findTop100ByScheduledStatusAndNextRunAtLessThanEqualOrderByNextRunAtAsc(
             ScheduledStatus scheduledStatus,
             LocalDateTime now
     );
 
     // 7. 중복 체크
-    boolean existsByFromAccountIdAndToAccountIdAndStatus(
+    boolean existsByFromAccountIdAndToAccountIdAndScheduledStatus(
             Long fromAccountId,
             Long toAccountId,
             ScheduledStatus scheduledStatus
