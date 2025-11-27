@@ -6,6 +6,8 @@ import com.db.bank.domain.enums.transaction.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -116,6 +118,34 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             LocalDateTime endDate,
             Pageable pageable
     );
+
+    // ==== 6.이상거래 탐지용 ====
+
+    // 동일 계좌 + 동일 수취인 + 동일 금액 거래 수 (최근 시간 기준)
+    @Query("SELECT COUNT(t) FROM Transaction t " +
+            "WHERE t.fromAccount.accountNum = :fromAccountNum " +
+            "AND t.toAccount.accountNum = :toAccountNum " +
+            "AND t.amount = :amount " +
+            "AND t.createdAt >= :sinceTime")
+    Long sameTransfer(@Param("fromAccountNum") String fromAccountNum,
+                      @Param("toAccountNum") String toAccountNum,
+                      @Param("amount") BigDecimal amount,
+                      @Param("sinceTime") LocalDateTime sinceTime);
+
+    // 하루 동안 이 계좌에서 나간 이체 총합
+    @Query("SELECT SUM(t.amount) FROM Transaction t " +
+            "WHERE t.fromAccount.accountNum = :fromAccountNum " +
+            "AND t.createdAt BETWEEN :startTime AND :endTime")
+    BigDecimal getTotalTransferredToday(@Param("fromAccountNum") String fromAccountNum,
+                                        @Param("startTime") LocalDateTime startTime,
+                                        @Param("endTime") LocalDateTime endTime);
+
+    // 해당 수취인 계좌로의 이전 이체 이력 있는지 확인
+    @Query("SELECT COUNT(t) FROM Transaction t " +
+            "WHERE t.fromAccount.accountNum = :fromAccountNum " +
+            "AND t.toAccount.accountNum = :toAccountNum")
+    Long countHistoryBetweenAccounts(@Param("fromAccountNum") String fromAccountNum,
+                                     @Param("toAccountNum") String toAccountNum);
 
 
 }

@@ -36,12 +36,21 @@ public class TransferLimitService {
         // 계좌번호로 조회
         Account account=accountRepository.findByAccountNum(accountNum)
                 .orElseThrow(()-> new AccountException.AccountNonExistsException("계좌없음:"+accountNum));
+
+        // 기존 ACTIVE 상태의 이체한도가 있다면 비활성화 처리
+        List<TransferLimit> existingLimits = transferLimitRepository.findByAccountAndStatus(account, TransferStatus.ACTIVE);
+        for (TransferLimit limit : existingLimits) {
+            limit.setStatus(TransferStatus.INACTIVE);
+            limit.setUpdatedAt(LocalDateTime.now());
+        }
+
         //객체 생성
         TransferLimit limit = TransferLimit.builder()
                 .account(account) //계좌
                 .dailyLimitAmt(dailyLimit) //하루한도
                 .perTxLimitAmt(perTxLimit) //1회한도
                 .startDate(LocalDateTime.now()) //시작은현재로
+                .status(TransferStatus.ACTIVE) //active 명시
                 .note(note)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())//수정시각

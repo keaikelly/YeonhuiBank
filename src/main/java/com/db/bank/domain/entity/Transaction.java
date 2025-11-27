@@ -3,11 +3,13 @@ package com.db.bank.domain.entity;
 import com.db.bank.domain.enums.transaction.*;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Check(constraints = "amount > 0")
 @Entity
 @Getter
 @Setter
