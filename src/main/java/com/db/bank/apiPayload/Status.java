@@ -53,7 +53,10 @@ public enum Status {
     TRANSACTION_READ_SUCCESS("200", "SUCCESS","거래 조회를 성공하였습니다."),
 
     //사유코드
-    REASON_CODE_DUPLICATE("409", "FAILURE", "중복된 사유코드입니다.");
+    REASON_CODE_DUPLICATE("409", "FAILURE", "중복된 사유코드입니다."),
+    REASON_CREATE_SUCCESS("201", "SUCCESS", "사유코드 생성을 성공하였습니다."),
+    REASON_GET_SUCCESS("200", "SUCCESS", "사유코드 조회를 성공하였습니다"),
+
     //이체 한도
     TRANSFER_LIMIT_CREATE_SUCCESS("201", "SUCCESS","이체 한도 생성/수정 성공"),
     TRANSFER_LIMIT_READ_SUCCESS("200", "SUCCESS","활성 이체 한도 조회 성공"),
