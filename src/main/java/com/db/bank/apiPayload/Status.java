@@ -55,9 +55,10 @@ public enum Status {
     TRANSFER_LIMIT_CREATE_SUCCESS("201", "SUCCESS","이체 한도 생성/수정 성공"),
     TRANSFER_LIMIT_READ_SUCCESS("200", "SUCCESS","활성 이체 한도 조회 성공"),
     TRANSFER_LIMIT_HISTORY_READ_SUCCESS("200", "SUCCESS", "이체 한도 이력 조회 성공"),
-    TRANSFER_LIMIT_ENDDATE_UPDATE_SUCCESS("200", "SUCCESS","이체 한도 종료일 수정 성공");
+    TRANSFER_LIMIT_ENDDATE_UPDATE_SUCCESS("200", "SUCCESS","이체 한도 종료일 수정 성공"),
 
-
+    //이상거래
+    ABN_TRANSFER_READ_SUCCESS("200","SUCCESS","이상거래 조회 성공");
 
     private final String code;
     private final String result;
