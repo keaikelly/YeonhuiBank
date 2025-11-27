@@ -24,19 +24,34 @@ public class TransferLimitService {
 
     // 특정계좌의 활성이체한도 조회 (하루, 건당이 리스트로)
     @Transactional(readOnly = true)
-    public List<TransferLimit> getActiveTransferLimit(String accountNum) {
-        //계좌번호로 Account 엔티티 조회
-        Account account =accountRepository.findByAccountNum(accountNum)
-                .orElseThrow(()-> new AccountException.AccountNonExistsException("계좌없음:"+accountNum));
+    public List<TransferLimit> getActiveTransferLimit(Long userId, String accountNum) {
+        Account account = accountRepository.findByAccountNum(accountNum)
+                .orElseThrow(() -> new AccountException.AccountNonExistsException("계좌없음:" + accountNum));
+
+        // 소유자 검증
+        if (!account.getUser().getId().equals(userId)) {
+            throw new AccountException.UnauthorizedAccountAccessException("해당 계좌는 이 사용자의 계좌가 아닙니다.");
+        }
+
         return transferLimitRepository.findByAccountAndStatus(account, TransferStatus.ACTIVE);
     }
 
     // 이체한도를 계좌에 등록
-    public TransferLimit createTransferLimit(String accountNum, BigDecimal dailyLimit, BigDecimal perTxLimit, String note) {
-        // 계좌번호로 조회
-        Account account=accountRepository.findByAccountNum(accountNum)
-                .orElseThrow(()-> new AccountException.AccountNonExistsException("계좌없음:"+accountNum));
+    // 2) 생성/변경
+    @Transactional
+    public TransferLimit createTransferLimit(
+            Long userId,
+            String accountNum,
+            BigDecimal dailyLimit,
+            BigDecimal perTxLimit,
+            String note
+    ) {
+        Account account = accountRepository.findByAccountNum(accountNum)
+                .orElseThrow(() -> new AccountException.AccountNonExistsException("계좌없음:" + accountNum));
 
+        if (!account.getUser().getId().equals(userId)) {
+            throw new AccountException.UnauthorizedAccountAccessException("해당 계좌는 이 사용자의 계좌가 아닙니다.");
+        }
         // 기존 ACTIVE 상태의 이체한도가 있다면 비활성화 처리
         List<TransferLimit> existingLimits = transferLimitRepository.findByAccountAndStatus(account, TransferStatus.ACTIVE);
         for (TransferLimit limit : existingLimits) {
@@ -59,23 +74,29 @@ public class TransferLimitService {
     }
 
     // 과거 이체한도 기록들을 조회 (활성+비활성 모두) -> 관리자 or 마이페이지 사용가능
-    @Transactional(readOnly = true) // 읽기 전용
-    public List<TransferLimit> getPastTransferLimits(String accountNum) {
-        // 계좌번호로 Account 조회
+    @Transactional(readOnly = true)
+    public List<TransferLimit> getPastTransferLimits(Long userId, String accountNum) {
         Account account = accountRepository.findByAccountNum(accountNum)
                 .orElseThrow(() -> new AccountException.AccountNonExistsException("계좌 없음: " + accountNum));
 
-        // 계좌의 상태 이체한도 리스트 반환
+        if (!account.getUser().getId().equals(userId)) {
+            throw new AccountException.UnauthorizedAccountAccessException("해당 계좌는 이 사용자의 계좌가 아닙니다.");
+        }
+
         return transferLimitRepository.findAllByAccount(account);
     }
     @Transactional
-    public TransferLimit updateEndDate(Long limitId, LocalDateTime newEndDate) {
+    public TransferLimit updateEndDate(Long userId, Long limitId, LocalDateTime endDate) {
         TransferLimit limit = transferLimitRepository.findById(limitId)
-                .orElseThrow(() -> new IllegalArgumentException("이체 한도를 찾을 수 없습니다. id=" + limitId));
+                .orElseThrow(() -> new IllegalArgumentException("이체한도 정보를 찾을 수 없습니다. id=" + limitId));
 
-        limit.setEndDate(newEndDate);
+        // 소유자 검증
+        if (!limit.getAccount().getUser().getId().equals(userId)) {
+            throw new AccountException.UnauthorizedAccountAccessException("해당 이체한도에 대한 수정 권한이 없습니다.");
+        }
+
+        limit.setEndDate(endDate);
         limit.setUpdatedAt(LocalDateTime.now());
-
         return limit;
     }
 

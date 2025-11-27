@@ -36,7 +36,7 @@ public class User {
     @Column(name = "login_id", nullable = false, length = 50, unique = true)
     private String userId;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 255)
     private String password;
 
     @CreationTimestamp

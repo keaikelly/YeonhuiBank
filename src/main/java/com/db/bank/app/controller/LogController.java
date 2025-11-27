@@ -5,13 +5,18 @@ import com.db.bank.apiPayload.Status;
 import com.db.bank.app.dto.LogDto;
 import com.db.bank.domain.entity.Log;
 import com.db.bank.domain.enums.log.Action;
+import com.db.bank.security.CustomUserDetails;
 import com.db.bank.service.LogService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -29,7 +34,7 @@ public class LogController {
     @Operation(summary = "계좌 별 로그 조회")
     public ApiResponse<Page<LogDto.LogResponse>> getLogsByAccount(
             @PathVariable String accountNum,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<Log> logs = logService.getLogsByAccount(accountNum, pageable);
 
@@ -39,11 +44,12 @@ public class LogController {
     }
 
     //사용자 별 로그 조회
-    @GetMapping("/user/{userId}")
+
+    @GetMapping("/me")
     @Operation(summary = "사용자 별 로그 조회")
     public ApiResponse<Page<LogDto.LogResponse>> getLogsByActorUser(
             @PathVariable Long userId,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<Log> logs = logService.getLogsByActorUser(userId, pageable);
 
@@ -64,7 +70,7 @@ public class LogController {
             @RequestParam("end")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime end,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<Log> logs = logService.getLogsByAccountAndPeriod(accountNum, start, end, pageable);
 
@@ -80,7 +86,7 @@ public class LogController {
     @Operation(summary = "액션 타입별 로그 조회")
     public ApiResponse<Page<LogDto.LogResponse>> getLogsByAction(
             @PathVariable Action action,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<Log> logs = logService.getLogsByAction(action, pageable);
 

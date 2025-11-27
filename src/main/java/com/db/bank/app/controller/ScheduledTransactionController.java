@@ -5,13 +5,18 @@ import com.db.bank.apiPayload.Status;
 import com.db.bank.app.dto.ScheduledTransactionDto;
 import com.db.bank.domain.entity.ScheduledTransaction;
 import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
+import com.db.bank.security.CustomUserDetails;
 import com.db.bank.service.ScheduledTransactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,12 +31,16 @@ public class ScheduledTransactionController {
     // 1) 예약이체 생성
     // POST /api/scheduled-transactions
     // ====================================
+
+    @SecurityRequirement(name = "BearerAuth")
     @PostMapping
     @Operation(summary = "예약이체 생성")
-    public ApiResponse<ScheduledTransactionDto.Response> create(@RequestBody ScheduledTransactionDto.CreateRequest req) {
+    public ApiResponse<ScheduledTransactionDto.Response> create(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody ScheduledTransactionDto.CreateRequest req) {
 
         ScheduledTransaction st = scheduledTransactionService.createSchedule(
-                req.getUserId(),
+                user.getId(),
                 req.getFromAccountId(),
                 req.getToAccountId(),
                 req.getAmount(),
@@ -51,13 +60,14 @@ public class ScheduledTransactionController {
     // 2) 내가 만든 예약이체 목록
     // GET /api/scheduled-transactions/my?userId=&page=
     // ====================================
+    @SecurityRequirement(name = "BearerAuth")
     @GetMapping("/my")
     @Operation(summary = "내가 만든 예약이체 목록")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getMySchedules(
-            @RequestParam Long userId,
-            Pageable pageable
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<ScheduledTransaction> page = scheduledTransactionService.getMySchedules(userId, pageable);
+        Page<ScheduledTransaction> page = scheduledTransactionService.getMySchedules(user.getId(), pageable);
 
         Page<ScheduledTransactionDto.Response> body = page.map(this::toResponse);
 
@@ -69,15 +79,16 @@ public class ScheduledTransactionController {
     // 3) 상태별 예약이체 조회
     // GET /api/scheduled-transactions/my/status?userId= &status=ACTIVE
     // ====================================
+    @SecurityRequirement(name = "BearerAuth")
     @GetMapping("/my/status")
     @Operation(summary = "상태별 예약이체 조회")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getMySchedulesByStatus(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam ScheduledStatus status,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<ScheduledTransaction> page = scheduledTransactionService
-                .getMySchedulesByStatus(userId, status, pageable);
+                .getMySchedulesByStatus(user.getId(), status, pageable);
 
         Page<ScheduledTransactionDto.Response> body = page.map(this::toResponse);
 
@@ -93,7 +104,7 @@ public class ScheduledTransactionController {
     @Operation(summary = "특정 출금 계좌 기준 예약 목록")
     public ApiResponse<Page<ScheduledTransactionDto.Response>> getByFromAccount(
             @PathVariable Long fromAccountId,
-            Pageable pageable
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<ScheduledTransaction> page =
                 scheduledTransactionService.getSchedulesByFromAccount(fromAccountId, pageable);
@@ -109,13 +120,15 @@ public class ScheduledTransactionController {
     // 5) 예약이체 단건 조회
     // GET /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
+
+    @SecurityRequirement(name = "BearerAuth")
     @GetMapping("/{scheduleId}")
     @Operation(summary = "예약 이체 단건 조회")
     public ApiResponse<ScheduledTransactionDto.Response> detail(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long scheduleId
     ) {
-        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(userId, scheduleId);
+        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(user.getId(), scheduleId);
 
         return ApiResponse.onSuccess(
                 Status.SCHEDULE_READ_SUCCESS,
@@ -128,15 +141,17 @@ public class ScheduledTransactionController {
     // 6) 예약이체 수정
     // PATCH /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
+
+    @SecurityRequirement(name = "BearerAuth")
     @PatchMapping("/{scheduleId}")
     @Operation(summary = "예약 이체 수정")
     public ApiResponse<ScheduledTransactionDto.Response> update(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long scheduleId,
             @RequestBody ScheduledTransactionDto.UpdateRequest req
     ) {
         ScheduledTransaction st = scheduledTransactionService.updateSchedule(
-                userId,
+                user.getId(),
                 scheduleId,
                 req.getAmount(),
                 req.getFrequency(),
@@ -153,13 +168,15 @@ public class ScheduledTransactionController {
     // 7) 예약이체 취소
     // DELETE /api/scheduled-transactions/{scheduleId}?userId=
     // ====================================
+
+    @SecurityRequirement(name = "BearerAuth")
     @DeleteMapping("/{scheduleId}")
     @Operation(summary = "예약 이체 취소")
     public ApiResponse<String> cancel(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long scheduleId
     ) {
-        scheduledTransactionService.cancelSchedule(userId, scheduleId);
+        scheduledTransactionService.cancelSchedule(user.getId(), scheduleId);
 
         return ApiResponse.onSuccess(Status.SCHEDULE_CANCEL_SUCCESS, "취소 완료");
     }
@@ -169,15 +186,16 @@ public class ScheduledTransactionController {
     // 8) 예약이체 일시정지
     // POST /api/scheduled-transactions/{scheduleId}/pause?userId=
     // ====================================
+    @SecurityRequirement(name = "BearerAuth")
     @PostMapping("/{scheduleId}/pause")
     @Operation(summary = "예약 이체 일시 정지")
     public ApiResponse<ScheduledTransactionDto.Response> pause(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long scheduleId
     ) {
-        scheduledTransactionService.pauseSchedule(userId, scheduleId);
+        scheduledTransactionService.pauseSchedule(user.getId(), scheduleId);
 
-        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(userId, scheduleId);
+        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(user.getId(), scheduleId);
         return ApiResponse.onSuccess(Status.SCHEDULE_UPDATE_SUCCESS, toResponse(st));
     }
 
@@ -185,15 +203,16 @@ public class ScheduledTransactionController {
     // 9) 예약이체 재개
     // POST /api/scheduled-transactions/{scheduleId}/resume?userId=
     // ====================================
+    @SecurityRequirement(name = "BearerAuth")
     @PostMapping("/{scheduleId}/resume")
     @Operation(summary = "예약 이체 재개")
     public ApiResponse<ScheduledTransactionDto.Response> resume(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long scheduleId
     ) {
-        scheduledTransactionService.resumeSchedule(userId, scheduleId);
+        scheduledTransactionService.resumeSchedule(user.getId(), scheduleId);
 
-        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(userId, scheduleId);
+        ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(user.getId(), scheduleId);
         return ApiResponse.onSuccess(Status.SCHEDULE_UPDATE_SUCCESS, toResponse(st));
     }
 

@@ -19,7 +19,7 @@ public class ScheduledTransactionDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRequest {
-        private Long userId;
+
         private Long fromAccountId;
         private Long toAccountId;
         private BigDecimal amount;

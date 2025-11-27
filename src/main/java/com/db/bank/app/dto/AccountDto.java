@@ -15,7 +15,7 @@ public class AccountDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRequest {
-        private Long userId;
+
         private String accountNum;
         private AccountType accountType;
         private BigDecimal initialBalance;
