@@ -3,12 +3,12 @@
 -- VALUES ('system_admin', '$2a$10$LwVbR.ME7xZP5m1kU1Zl5OUYkdqN2b8lQlaeQxPz2GjXQmclA6mB6', '시스템관리자', NOW());
 --
 -- 실패 사유
-INSERT INTO transfer_failure_reason (reason_code, description)
-VALUES
-    ('INSUFFICIENT_FUNDS', '잔액 부족'),
-    ('ACCOUNT_LOCKED', '계좌 잠김'),
-    ('DAILY_LIMIT_EXCEEDED', '일일 한도 초과'),
-    ('RETRY_FAILED', '재시도 실패');
+-- INSERT INTO transfer_failure_reason (reason_code, description)
+-- VALUES
+--     ('INSUFFICIENT_FUNDS', '잔액 부족'),
+--     ('ACCOUNT_LOCKED', '계좌 잠김'),
+--     ('DAILY_LIMIT_EXCEEDED', '일일 한도 초과'),
+--     ('RETRY_FAILED', '재시도 실패');
 
 --
 -- --  시스템 입금 전용 계좌

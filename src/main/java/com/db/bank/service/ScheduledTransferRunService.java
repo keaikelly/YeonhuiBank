@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -40,10 +41,19 @@ public class ScheduledTransferRunService {
         if (executedAt == null) {
             executedAt = LocalDateTime.now();
         }
+        LocalTime runTime = null;
+        if (schedule.getRunTime() != null) {
+            runTime = schedule.getRunTime();
+        } else if (schedule.getNextRunAt() != null) {
+            runTime = schedule.getNextRunAt().toLocalTime();
+        } else {
+            runTime = executedAt.toLocalTime();
+        }
 
         ScheduledTransferRun run = ScheduledTransferRun.builder()
                 .schedule(schedule)
                 .txnOut(txnOut)
+                .runTime(runTime)
                 .txnIn(txnIn)
                 .result(result)
                 .message(message)

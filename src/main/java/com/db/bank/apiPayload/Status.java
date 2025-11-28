@@ -27,7 +27,7 @@ public enum Status {
     SCHEDULED_TRANSACTION_FORBIDDEN("403", "FAILURE", "접근 불가 예약이체입니다."),
     INVALID_SCHEDULED_TRANSACTION_TIME("400", "FAILURE", "예약 실행 시간이 올바르지 않습니다."),
     SCHEDULED_TRANSACTION_ALREADY_FINISHED("409", "FAILURE", "이미 종료된 예약이체입니다."),
-    INVALID_SCHEDULE_STATUS_FOR_PAUSE("409", "FAILURE", "ACTIVE 상태의 예약이체만 일시정지할 수 있습니다."),
+    INVALID_SCHEDULE_STATUS_FOR_PAUSE("409", "FAILURE", "ACTIVE 상태의 예약이체만 가능합니다."),
     INVALID_SCHEDULE_STATUS_FOR_RESUME("409", "FAILURE", "PAUSED 상태의 예약이체만 재개할 수 있습니다."),
     SCHEDULED_TRANSACTION_NOT_FOUND("404", "FAILURE", "예약이체를 찾을 수 없습니다."),
     SCHEDULE_CREATE_SUCCESS("201","SUCCESS","예약 이체 생성을 성공하였습니다."),
@@ -35,6 +35,7 @@ public enum Status {
     SCHEDULE_UPDATE_SUCCESS("200", "SUCCESS","예약 이체 수정을 성공하였습니다."),
     SCHEDULE_CANCEL_SUCCESS("204","SUCCESS","예약 이체 취소를 성공하였습니다."),
     SCHEDULE_RUN_READ_SUCCESS("200", "SUCCESS","예약이체 실행 이력 조회 성공"),
+    SCHEDULE_RUN_NOW_SUCCESS("200", "SUCCESS","예약 이체 실행을 성공하였습니다."),
 
     //로그
     INVALID_LOG_ARGUMENT("404", "FAILURE", "로그 기록을 위한 transaction/account/actorUser는 null일 수 없습니다."),

@@ -215,6 +215,27 @@ public class ScheduledTransactionController {
         ScheduledTransaction st = scheduledTransactionService.getScheduleDetail(user.getId(), scheduleId);
         return ApiResponse.onSuccess(Status.SCHEDULE_UPDATE_SUCCESS, toResponse(st));
     }
+    // ====================================
+// 10) 예약이체 즉시 실행 (데모/재시도 용)
+// POST /api/scheduled-transactions/{scheduleId}/run-now
+// ====================================
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping("/{scheduleId}/run-now")
+    @Operation(summary = "예약이체 즉시 실행(재시도/강제 실행)", description = "스케줄러를 기다리지 않고 바로 예약이체를 1회 실행합니다.")
+    public ApiResponse<String> runNow(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long scheduleId
+    ) {
+
+        // 일정 권한/소유자 체크
+        scheduledTransactionService.runNow(user.getId(), scheduleId);
+
+        return ApiResponse.onSuccess(
+                Status.SCHEDULE_RUN_NOW_SUCCESS,
+                "예약이체가 즉시 실행되었습니다."
+        );
+    }
+
 
 
     // ====================================

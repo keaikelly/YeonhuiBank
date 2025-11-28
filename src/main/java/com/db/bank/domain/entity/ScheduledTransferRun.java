@@ -41,12 +41,12 @@ public class ScheduledTransferRun {
     private RunResult result;
 
     // 실패/감사 사유 메시지
-    @Column(name = "message", length = 255)
+    @Column(name = "message", length = 1000)
     private String message;
 
-    // 출금 거래 (FK → transaction.transaction_id), NOT NULL, unique
+    // 출금 거래 (FK → transaction.transaction_id), NULL, unique 예약 이체 실패 시 트랜잭션 안만들어짐
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "txn_out_id", nullable = false, unique = true)
+    @JoinColumn(name = "txn_out_id",  unique = true)
     private Transaction txnOut;
 
     // 입금 거래 (FK → transaction.transaction_id), NULL 가능, unique

@@ -250,8 +250,6 @@ public class ScheduledTransactionService {
      */
     @Transactional
     public void runDueSchedules(LocalDateTime now) {
-
-        // 1. 실행 대상 스케줄 조회 (예: ACTIVE + next_run_at <= now)
         List<ScheduledTransaction> dueList =
                 scheduledTransactionRepository.findByScheduledStatusAndNextRunAtLessThanEqual(
                         ScheduledStatus.ACTIVE,
@@ -259,67 +257,92 @@ public class ScheduledTransactionService {
                 );
 
         for (ScheduledTransaction schedule : dueList) {
-            try {
-                // 2. 실제 이체 수행
-                Transaction tx = transactionService.transfer(
-                        schedule.getCreatedBy().getId(),
-                        schedule.getFromAccount().getAccountNum(),
-                        schedule.getToAccount().getAccountNum(),
-                        schedule.getAmount(),
-                        schedule.getMemo()
-                );
-
-                // 3. 성공 로그 기록 (처음 실행 성공 케이스)
-                scheduledTransferRunService.recordSuccess(
-                        schedule,
-                        tx,
-                        null,
-                        "예약이체 성공"
-                );
-
-                // 4. nextRunAt 갱신 (네가 만든 next 실행 시간 계산 로직 사용)
-                schedule.setLastRunAt(now);
-                schedule.setNextRunAt(recalculateNextRunAt(schedule));
-
-            } catch (Exception e) {
-                // 5. 처음 실패도 여기서 로그 남김 ✅
-
-                // (1) 재시도 횟수/시간 설정
-                int retryNo = 0;                 // 처음 실패이므로 0
-                int maxRetries = 3;              // 정책에 맞게 변경 가능
-                LocalDateTime nextRetryAt = now.plusMinutes(10);
-
-                // (2) 실패사유 매핑
-                TransferFailureReason reason;
-                if (e instanceof TransactionException.InsufficientFundsException) {
-                    reason = failureReasonService.getReason("INSUFFICIENT_FUNDS");
-                } else if (e instanceof TransactionException.AccountLockedException) {
-                    reason = failureReasonService.getReason("ACCOUNT_LOCKED");
-                } else if (e instanceof TransactionException.DailyLimitExceededException) {
-                    reason = failureReasonService.getReason("DAILY_LIMIT_EXCEEDED");
-                } else {
-                    reason = failureReasonService.getReason("RETRY_FAILED");
-                }
-
-                // (3) 실패 로그 기록 (처음 실패 기록!) ✅
-                scheduledTransferRunService.recordFailure(
-                        schedule,
-                        null,                   // tx 없으니까 null
-                        null,
-                        RunResult.ERROR,
-                        "예약이체 실패: " + e.getMessage(),
-                        reason,
-                        retryNo,
-                        maxRetries,
-                        nextRetryAt
-                );
-
-                // (4) 스케줄 상태는 계속 ACTIVE 유지 or 일단 ACTIVE 유지 후 재시도
-                schedule.setLastRunAt(now);
-                schedule.setNextRunAt(nextRetryAt);
-            }
+            executeSchedule(schedule, now);
         }
     }
+
+    @Transactional
+    public void runNow(Long userId, Long scheduleId) {
+        // 1. 예약이체 소유자 + 존재 여부 검증
+        ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
+
+        // 2. 상태 검사 (원하면 ACTIVE일 때만 허용)
+        if (schedule.getScheduledStatus() != ScheduledStatus.ACTIVE) {
+            throw new ScheduledTransactionException.InvalidScheduleStatusForPauseException(
+                    "ACTIVE 상태의 예약이체만 즉시 실행할 수 있습니다."
+            );
+        }
+
+        // 3. 지금 시각 기준으로 한 번 실행
+        LocalDateTime now = LocalDateTime.now();
+        executeSchedule(schedule, now);
+    }
+
+    /**
+     * 예약이체 1건을 지금(now) 기준으로 실행하는 공통 로직
+     * - runDueSchedules / runNow 둘 다 여기로 모아서 사용
+     */
+    @Transactional
+    protected void executeSchedule(ScheduledTransaction schedule, LocalDateTime now) {
+        try {
+            // 1) 실제 계좌 이체
+            Transaction tx = transactionService.transfer(
+                    schedule.getCreatedBy().getId(),
+                    schedule.getFromAccount().getAccountNum(),
+                    schedule.getToAccount().getAccountNum(),
+                    schedule.getAmount(),
+                    schedule.getMemo()
+            );
+
+            // 2) 성공 실행 로그 기록
+            scheduledTransferRunService.recordSuccess(
+                    schedule,
+                    tx,
+                    null,                   // externalAccountNum 등 필요하면 나중에 추가
+                    "예약이체 성공"
+            );
+
+            // 3) 실행 시간 갱신 + 다음 실행 시각 계산
+            schedule.setLastRunAt(now);
+            schedule.setNextRunAt(recalculateNextRunAt(schedule));
+
+        } catch (TransactionException e) {
+            // 4) 실패 케이스 처리 (처음 실패 기준으로 retryNo=0)
+            int retryNo = 0;
+            int maxRetries = 3;
+            LocalDateTime nextRetryAt = now.plusMinutes(10);
+
+            // 실패 사유 코드 매핑
+            TransferFailureReason reason;
+            if (e instanceof TransactionException.InsufficientFundsException) {
+                reason = failureReasonService.getReason("INSUFFICIENT_FUNDS");
+            } else if (e instanceof TransactionException.AccountLockedException) {
+                reason = failureReasonService.getReason("ACCOUNT_LOCKED");
+            } else if (e instanceof TransactionException.DailyLimitExceededException) {
+                reason = failureReasonService.getReason("DAILY_LIMIT_EXCEEDED");
+            } else {
+                reason = failureReasonService.getReason("RETRY_FAILED");
+            }
+
+            // 실패 실행 로그 기록
+            scheduledTransferRunService.recordFailure(
+                    schedule,
+                    null,
+                    null,
+                    RunResult.ERROR,
+                    "예약이체 실패: " + e.getMessage(),
+                    reason,
+                    retryNo,
+                    maxRetries,
+                    nextRetryAt
+            );
+
+            // 스케줄에 실패/다음 재시도 시간 반영
+            schedule.setLastRunAt(now);
+            schedule.setNextRunAt(nextRetryAt);
+        }
+    }
+
 
 
 
