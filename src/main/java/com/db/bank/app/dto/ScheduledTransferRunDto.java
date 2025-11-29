@@ -34,4 +34,19 @@ public class ScheduledTransferRunDto {
 
         private LocalDateTime nextRetryAt;
     }
+    @Getter
+    @Builder
+    public static class FailureResponse {
+        private Long runId;
+        private Long scheduleId;
+        private LocalDateTime executedAt;
+        private String runTime;              // "09:30:00" 같은 문자열로 줘도 됨
+        private RunResult result;            // ERROR, INSUFFICIENT_FUNDS 등
+        private String message;              // 실패 메시지 (잘린 상태)
+        private String failureReasonCode;    // INSUFFICIENT_FUNDS
+        private String failureReasonDesc;    // "잔액 부족"
+        private Integer retryNo;
+        private Integer maxRetries;
+        private LocalDateTime nextRetryAt;
+    }
 }

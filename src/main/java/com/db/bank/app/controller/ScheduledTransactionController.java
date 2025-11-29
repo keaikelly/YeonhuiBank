@@ -3,11 +3,14 @@ package com.db.bank.app.controller;
 import com.db.bank.apiPayload.ApiResponse;
 import com.db.bank.apiPayload.Status;
 import com.db.bank.app.dto.ScheduledTransactionDto;
+import com.db.bank.app.dto.ScheduledTransferRunDto;
 import com.db.bank.domain.entity.ScheduledTransaction;
+import com.db.bank.domain.entity.ScheduledTransferRun;
 import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import com.db.bank.security.CustomUserDetails;
 import com.db.bank.service.ScheduledTransactionService;
 
+import com.db.bank.service.ScheduledTransferRunService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +22,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/scheduled-transactions")
 @RequiredArgsConstructor
@@ -26,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class ScheduledTransactionController {
 
     private final ScheduledTransactionService scheduledTransactionService;
-
+    private final ScheduledTransferRunService scheduledTransferRunService;
     // ====================================
     // 1) 예약이체 생성
     // POST /api/scheduled-transactions
@@ -38,6 +43,10 @@ public class ScheduledTransactionController {
     public ApiResponse<ScheduledTransactionDto.ScheduledTransactionResponse> create(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody ScheduledTransactionDto.ScheduledTransactionCreateRequest req) {
+
+        System.out.println("[DEBUG] startDate = " + req.getStartDate());
+        System.out.println("[DEBUG] endDate   = " + req.getEndDate());
+        System.out.println("[DEBUG] runTime   = " + req.getRunTime());
 
         ScheduledTransaction st = scheduledTransactionService.createSchedule(
                 user.getId(),
@@ -234,6 +243,49 @@ public class ScheduledTransactionController {
                 Status.SCHEDULE_RUN_NOW_SUCCESS,
                 "예약이체가 즉시 실행되었습니다."
         );
+    }
+
+    // ====================================
+    // 11) 특정 예약이체의 실패 실행 로그 조회
+    // GET /api/scheduled-transactions/{scheduleId}/runs/failures
+    // ====================================
+    @SecurityRequirement(name = "BearerAuth")
+    @GetMapping("/{scheduleId}/runs/failures")
+    @Operation(summary = "예약이체 실패 실행 로그 조회",
+            description = "해당 예약이체에 대해 지금까지 실패한 실행(run) 내역과 실패 사유를 조회합니다.")
+    public ApiResponse<List<ScheduledTransferRunDto.FailureResponse>> getFailures(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long scheduleId
+    ) {
+        List<ScheduledTransferRun> runs =
+                scheduledTransferRunService.getMyFailures(user.getId(), scheduleId);
+
+        List<ScheduledTransferRunDto.FailureResponse> body = runs.stream()
+                .map(this::toFailureResponse)
+                .toList();
+
+        return ApiResponse.onSuccess(Status.SCHEDULE_RUN_FAILURE_READ_SUCCESS, body);
+    }
+
+    // ========= 실행로그 DTO 변환 =========
+    private ScheduledTransferRunDto.FailureResponse toFailureResponse(ScheduledTransferRun run) {
+        return ScheduledTransferRunDto.FailureResponse.builder()
+                .runId(run.getId())
+                .scheduleId(run.getSchedule().getId())
+                .executedAt(run.getExecutedAt())
+                .runTime(run.getRunTime() != null ? run.getRunTime().toString() : null)
+                .result(run.getResult())
+                .message(run.getMessage())
+                .failureReasonCode(
+                        run.getFailureReason() != null ? run.getFailureReason().getReasonCode() : null
+                )
+                .failureReasonDesc(
+                        run.getFailureReason() != null ? run.getFailureReason().getDescription() : null
+                )
+                .retryNo(run.getRetryNo())
+                .maxRetries(run.getMaxRetries())
+                .nextRetryAt(run.getNextRetryAt())
+                .build();
     }
 
 

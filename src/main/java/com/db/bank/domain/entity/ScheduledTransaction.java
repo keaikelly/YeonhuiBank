@@ -79,7 +79,7 @@ public class ScheduledTransaction {
     private LocalDateTime updatedAt;
 
 
-    @Column(name = "run_time", nullable = false)
+    @Column(name = "run_time", nullable = false, columnDefinition = "TIME DEFAULT '09:30:00'")
     private LocalTime runTime;
 
 

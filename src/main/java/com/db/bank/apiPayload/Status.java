@@ -36,7 +36,7 @@ public enum Status {
     SCHEDULE_CANCEL_SUCCESS("204","SUCCESS","예약 이체 취소를 성공하였습니다."),
     SCHEDULE_RUN_READ_SUCCESS("200", "SUCCESS","예약이체 실행 이력 조회 성공"),
     SCHEDULE_RUN_NOW_SUCCESS("200", "SUCCESS","예약 이체 실행을 성공하였습니다."),
-
+    SCHEDULE_RUN_FAILURE_READ_SUCCESS("200", "SUCCESS","예약 이체 실패 코드 조회를 성공하였습니다."),
     //로그
     INVALID_LOG_ARGUMENT("404", "FAILURE", "로그 기록을 위한 transaction/account/actorUser는 null일 수 없습니다."),
     LOG_READ_SUCCESS("200", "SUCCESS","로그 조회에 성공했습니다."),

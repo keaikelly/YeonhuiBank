@@ -20,7 +20,11 @@ public interface ScheduledTransferRunRepository extends JpaRepository<ScheduledT
             int maxRetryCheck,
             LocalDateTime now
     );
-
+    // 특정 예약(schedule)의 실행 로그 중 실패한 것만 조회
+    List<ScheduledTransferRun> findByScheduleIdAndResultNotOrderByExecutedAtDesc(
+            Long scheduleId,
+            RunResult result
+    );
     // 실패한 실행 로그 조회
     List<ScheduledTransferRun> findByResult(RunResult result);
 

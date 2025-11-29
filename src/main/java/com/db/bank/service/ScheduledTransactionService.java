@@ -48,6 +48,7 @@ public class ScheduledTransactionService {
             String rruleString,
             String memo
     ) {
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ScheduledTransactionException.InvalidScheduledTransactionAmountException("예약이체 금액은 0보다 커야 합니다.");
         }
@@ -306,7 +307,35 @@ public class ScheduledTransactionService {
             schedule.setLastRunAt(now);
             schedule.setNextRunAt(recalculateNextRunAt(schedule));
 
-        } catch (TransactionException e) {
+        }catch (AccountException.InsufficientBalanceException e) {
+
+            int retryNo = 0;
+            int maxRetries = 3;
+            LocalDateTime nextRetryAt = now.plusMinutes(10);
+
+            // 실패 사유 코드: INSUFFICIENT_FUNDS (DB에 미리 만들어둔 코드)
+            TransferFailureReason reason = failureReasonService.getReason("INSUFFICIENT_FUNDS");
+            System.out.println("[디버그]failureRecord");
+            scheduledTransferRunService.recordFailure(
+                    schedule,
+                    null,
+                    null,
+                    RunResult.ERROR,
+                    "예약이체 실패: " + e.getMessage(),
+                    reason,
+                    retryNo,
+                    maxRetries,
+                    nextRetryAt
+            );
+
+            schedule.setLastRunAt(now);
+            schedule.setNextRunAt(nextRetryAt);
+
+            // ❗지금처럼 409 응답을 유지하고 싶으면 다시 던져줌
+            throw e;
+
+            // 🔹 그 외 우리가 정의한 TransactionException 처리 (한도 초과 등)
+        }  catch (TransactionException e) {
             // 4) 실패 케이스 처리 (처음 실패 기준으로 retryNo=0)
             int retryNo = 0;
             int maxRetries = 3;
