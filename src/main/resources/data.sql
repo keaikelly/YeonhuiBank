@@ -1,0 +1,97 @@
+--  시스템 관리자 유저 생성
+INSERT INTO user (login_id, password, name, created_at)
+SELECT 'system_admin', '$2a$10$LwVbR.ME7xZP5m1kU1Zl5OUYkdqN2b8lQlaeQxPz2GjXQmclA6mB6', '시스템관리자', NOW()
+WHERE NOT EXISTS (
+    SELECT 1 FROM user WHERE login_id = 'system_admin'
+);
+-- 실패 사유
+INSERT INTO transfer_failure_reason (reason_code, description)
+VALUES
+    ('INSUFFICIENT_FUNDS', '잔액 부족'),
+    ('ACCOUNT_LOCKED', '계좌 잠김'),
+    ('DAILY_LIMIT_EXCEEDED', '일일 한도 초과'),
+    ('RETRY_FAILED', '재시도 실패');
+
+
+--  시스템 입금 전용 계좌
+INSERT INTO account (account_num, balance, account_type, created_at, user_id)
+VALUES ('999-000', 0, 'EXTERNAL_IN', NOW(), 1);
+
+--  시스템 출금 전용 계좌
+INSERT INTO account (account_num, balance, account_type, created_at, user_id)
+VALUES ('999-111', 0, 'EXTERNAL_OUT', NOW(), 1);
+
+-- check
+ALTER TABLE account
+    ADD CONSTRAINT chk_account_num_format
+        CHECK (account_num REGEXP '^[0-9-]+$');
+
+ALTER TABLE `transaction`
+    ADD CONSTRAINT chk_tx_amount  CHECK (`amount` > 0),
+  ADD CONSTRAINT chk_tx_type    CHECK (`type` IN ('DEPOSIT', 'WITHDRAWAL', 'TRANSFER', 'FEE' )),
+  ADD CONSTRAINT chk_tx_status  CHECK (`status` IN ('PENDING', 'SUCCESS', 'FAILED' ));
+
+ALTER TABLE `scheduled_transaction`
+    ADD CONSTRAINT chk_st_amount CHECK (`amount` > 0),
+  ADD CONSTRAINT chk_st_from_to_diff CHECK (`from_account_id` <> `to_account_id`);
+
+ALTER TABLE `transfer_limit`
+    ADD CONSTRAINT chk_tl_positive CHECK (
+        (daily_limit_amt  IS NULL OR daily_limit_amt  >= 0) AND
+        (per_tx_limit_amt IS NULL OR per_tx_limit_amt >= 0)
+        );
+
+--추가 옵션
+ALTER TABLE `scheduled_transaction`
+    ADD CONSTRAINT chk_st_date_range
+        CHECK (`end_date` IS NULL OR `end_date` >= `start_date`);
+
+ALTER TABLE `transfer_limit`
+    ADD CONSTRAINT chk_limit_date_range
+        CHECK (`end_date` IS NULL OR `end_date` >= `start_date`);
+
+ALTER TABLE `SCHEDULED_TRANSFER_RUN`
+    ADD CONSTRAINT chk_run_retry_range
+        CHECK (`retry_no` IS NULL OR `retry_no` <= `max_retries`);
+#
+# CREATE INDEX ix_account_user     ON `Account`(`user_id`);
+# CREATE INDEX ix_tx_from_time     ON `transaction`(`from_account_num`,`created_at`);
+# CREATE INDEX ix_tx_to_time       ON `transaction`(`to_account_num`,`created_at`);
+# CREATE INDEX ix_log_acc_time     ON `log`(`account_num`,`created_at`);
+# CREATE INDEX ix_log_txn          ON `log`(`transaction_id`);
+# CREATE INDEX ix_sched_status_run ON `scheduled_transaction`(`scheduled_status`,`next_run_at`);
+# CREATE INDEX ix_sched_from       ON `scheduled_transaction`(`from_account_id`);
+# CREATE INDEX ix_sched_to         ON `scheduled_transaction`(`to_account_id`);
+# CREATE INDEX ix_sched_creator    ON `scheduled_transaction`(`created_by`);
+# CREATE INDEX ix_run_sched_time   ON `SCHEDULED_TRANSFER_RUN`(`schedule_id`,`executed_at`);
+# CREATE INDEX ix_tl_acc_range ON transfer_limit (account_num, start_date, end_date);
+# CREATE INDEX ix_tl_status    ON transfer_limit (`status`);
+# CREATE INDEX ix_atl_acc_time ON abnormal_transfer_log (account_num, created_at);
+# -- 추가 옵션 (성공/실패 중심 뷰(v_tx_success, v_scheduled_run_detail) 조회 속도를 조금 더 올려주는 역할)
+# CREATE INDEX ix_tx_status_time ON `transaction`(`status`,`created_at`);
+# CREATE INDEX ix_run_result_time ON `SCHEDULED_TRANSFER_RUN`(`result`,`executed_at`);
+
+-- trigger
+-- amount > 0, from/to NULL 체크, 동일계좌 금지
+# CREATE TRIGGER trg_tx_before_insert
+#     BEFORE INSERT ON `transaction`
+#     FOR EACH ROW
+# BEGIN
+#     IF NEW.from_account_num IS NULL OR NEW.to_account_num IS NULL THEN
+#     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '입출금 계좌는 NULL일 수 없습니다.';
+# END IF;
+#
+# IF NEW.amount <= 0 THEN
+#     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '이체 금액은 0보다 커야 합니다.';
+# END IF;
+#
+#   IF NEW.from_account_num IS NOT NULL
+#      AND NEW.to_account_num IS NOT NULL
+#      AND NEW.from_account_num = NEW.to_account_num THEN
+#     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '출금/입금 계좌는 서로 달라야 합니다.';
+# END IF;
+# END;
+
+
+
+-- view

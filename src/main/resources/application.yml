@@ -6,13 +6,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
-      mode: never
-      schema-locations: classpath:schema.sql
-
+      mode: always
+      data-locations: classpath:data.sql
 
   jpa:
     hibernate:
-      ddl-auto: update   # 처음엔 create / update 쓰고, 나중엔 validate로 바꾸면 좋음
+      ddl-auto: create # 처음엔 create / update 쓰고, 나중엔 validate로 바꾸면 좋음
     show-sql: true       # 콘솔에 SQL 보이게
     properties:
       hibernate:

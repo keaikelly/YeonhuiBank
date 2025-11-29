@@ -51,7 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (jwtTokenProvider.validateToken(token)) {
             String loginId = jwtTokenProvider.getLoginId(token);
-            log.info("[JWT] token valid, loginId = {}", loginId);
+            String role = jwtTokenProvider.getRole(token); // JWT에서 role 꺼냄
+
+            // 🔥 추가 로그
+            log.info("[🔥 DEBUG] token에서 추출한 loginId = '{}'", loginId);
+            log.info("[🔥 DEBUG] token에서 추출한 role = '{}'", role);
 
             CustomUserDetails userDetails =
                     (CustomUserDetails) userDetailsService.loadUserByUsername(loginId);

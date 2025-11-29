@@ -3,6 +3,7 @@ package com.db.bank.config;
 import com.db.bank.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.*;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,6 +29,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // <--- 이 라인 추가!
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
@@ -36,7 +38,6 @@ public class SecurityConfig {
                                 "/api/failure-reasons/**",
                                 "/api/logs/account/**",
                                 "/api/abn-transfers/**"
-
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

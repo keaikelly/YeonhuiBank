@@ -30,6 +30,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(loginId)
                 .claim("userId", userId)
+                .claim("role", "ROLE_USER")  // 이 한 줄 추가
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -52,6 +53,12 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject(); // loginId
+    }
+
+    public String getRole(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token).getBody();
+        return claims.get("role", String.class); // ex) "ROLE_USER"
     }
 
     public Long getUserPk(String token) {
