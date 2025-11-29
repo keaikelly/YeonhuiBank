@@ -28,7 +28,7 @@ public class ScheduledTransactionExceptionHandler {
     @ExceptionHandler(ScheduledTransactionException.ScheduledTransactionAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<?>> handleInvalidLogArgument(ScheduledTransactionException.ScheduledTransactionAlreadyExistsException ex) {
         return new ResponseEntity<>(
-                ApiResponse.onFailure(Status.INVALID_SCHEDULED_TRANSACTION_STARTDATE),
+                ApiResponse.onFailure(Status.SCHEDULED_TRANSACTION_ALREADY_PRESENT),
                 HttpStatus.CONFLICT
 
         );

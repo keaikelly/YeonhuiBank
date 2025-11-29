@@ -6,6 +6,7 @@ import com.db.bank.app.dto.ScheduledTransactionDto;
 import com.db.bank.app.dto.ScheduledTransferRunDto;
 import com.db.bank.domain.entity.ScheduledTransaction;
 import com.db.bank.domain.entity.ScheduledTransferRun;
+import com.db.bank.domain.enums.scheduledTransaction.Frequency;
 import com.db.bank.domain.enums.scheduledTransaction.ScheduledStatus;
 import com.db.bank.security.CustomUserDetails;
 import com.db.bank.service.ScheduledTransactionService;
@@ -22,6 +23,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController

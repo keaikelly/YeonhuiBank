@@ -54,9 +54,10 @@ public class ScheduledTransactionService {
         }
         if (startDate == null) {
             throw new ScheduledTransactionException.InvalidScheduledTransactionStartDateException("시작일은 필수입니다.");
+            //startDate = LocalDate.now();
         }
         if (runTime == null) {
-            throw new ScheduledTransactionException.InvalidScheduledTransactionTimeException("실행 시간(runTime)은 필수입니다.");
+            runTime = LocalTime.of(9, 30);
         }
 
         User user = userRepository.findById(userId)

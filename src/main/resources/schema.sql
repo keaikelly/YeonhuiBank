@@ -1,7 +1,7 @@
 -- --  시스템 관리자 유저 생성
 -- INSERT INTO user (login_id, password, name, created_at)
--- VALUES ('system_admin', '$2a$10$LwVbR.ME7xZP5m1kU1Zl5OUYkdqN2b8lQlaeQxPz2GjXQmclA6mB6', '시스템관리자', NOW());
---
+-- VALUES ('system_admin', '$2a$10$jvlqtXrJLsa3f9jzi9.WGu1dIqbiiRTGc3TF8Iv83Si0sUvuKTThq', '시스템관리자', NOW());
+-- 비번 admin123!
 -- 실패 사유
 -- INSERT INTO transfer_failure_reason (reason_code, description)
 -- VALUES
