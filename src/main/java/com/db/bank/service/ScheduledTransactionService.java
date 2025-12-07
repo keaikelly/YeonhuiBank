@@ -494,20 +494,21 @@ public class ScheduledTransactionService {
                 return base.plusWeeks(interval);
             case "MONTHLY":
                 if (byMonthDay != null) {
-                    // 다음 달 같은 시간, day만 BYMONTHDAY로 맞추기
+                    // ✅ 아직 패턴 위에 올라가지 않은 첫 정렬 단계
+                    if (!isAlignedToByMonthDay(base, byMonthDay)) {
+                        return alignToByMonthDay(base, byMonthDay);
+                    }
+
+                    // ✅ 이미 BYMONTHDAY에 맞춰진 상태면 → interval달 뒤 같은 BYMONTHDAY
                     LocalDateTime nextMonth = base.plusMonths(interval);
                     int lastDayOfMonth = nextMonth.toLocalDate().lengthOfMonth();
                     int day = Math.min(byMonthDay, lastDayOfMonth);
-                    return LocalDateTime.of(
-                            nextMonth.getYear(),
-                            nextMonth.getMonth(),
-                            day,
-                            base.getHour(),
-                            base.getMinute()
-                    );
+
+                    return nextMonth.withDayOfMonth(day); // 시간은 base와 동일
                 } else {
                     return base.plusMonths(interval);
                 }
+
             default:
                 return null;
         }
@@ -532,6 +533,49 @@ public class ScheduledTransactionService {
         // 혹시 못 찾으면(이론상 거의 없음) 일주일 뒤 같은 요일로
         return base.plusWeeks(1);
     }
+    private boolean isAlignedToByMonthDay(LocalDateTime base, int byMonthDay) {
+        LocalDate date = base.toLocalDate();
+        int lastDay = date.lengthOfMonth();
+        int effectiveDay = Math.min(byMonthDay, lastDay); // 31일 없는 달 방어
+        return date.getDayOfMonth() == effectiveDay;
+    }
+    private LocalDateTime alignToByMonthDay(LocalDateTime base, int byMonthDay) {
+        LocalDate date = base.toLocalDate();
+        LocalTime time = base.toLocalTime();
+
+        int lastDayThisMonth = date.lengthOfMonth();
+        int targetDayThisMonth = Math.min(byMonthDay, lastDayThisMonth);
+
+        // 1) 이번 달에 아직 targetDay가 안 지났으면 → 이번 달 targetDay
+        if (date.getDayOfMonth() < targetDayThisMonth) {
+            return LocalDateTime.of(
+                    date.getYear(),
+                    date.getMonth(),
+                    targetDayThisMonth,
+                    time.getHour(),
+                    time.getMinute(),
+                    time.getSecond(),
+                    time.getNano()
+            );
+        }
+
+        // 2) 이미 targetDay 지나갔으면 → 다음 달의 targetDay
+        LocalDate nextMonth = date.plusMonths(1);
+        int lastDayNextMonth = nextMonth.lengthOfMonth();
+        int targetDayNextMonth = Math.min(byMonthDay, lastDayNextMonth);
+
+        return LocalDateTime.of(
+                nextMonth.getYear(),
+                nextMonth.getMonth(),
+                targetDayNextMonth,
+                time.getHour(),
+                time.getMinute(),
+                time.getSecond(),
+                time.getNano()
+        );
+    }
+
+
 
     private LocalDateTime nextWeeklyByDay(LocalDateTime base,
                                           int interval,
