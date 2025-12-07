@@ -18,9 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -428,6 +431,7 @@ public class ScheduledTransactionService {
         String freq = null;
         Integer interval = null;
         Integer byMonthDay = null;
+        List<DayOfWeek> byDays = new ArrayList<>();
 
         for (String part : parts) {
             String[] kv = part.split("=");
@@ -445,6 +449,22 @@ public class ScheduledTransactionService {
                 case "BYMONTHDAY":
                     byMonthDay = Integer.parseInt(value); // 1~31
                     break;
+
+                case "BYDAY":
+                    // 예: MO,TU,FR
+                    String[] tokens = value.split(",");
+                    for (String t : tokens) {
+                        switch (t.trim()) {
+                            case "MO": byDays.add(DayOfWeek.MONDAY); break;
+                            case "TU": byDays.add(DayOfWeek.TUESDAY); break;
+                            case "WE": byDays.add(DayOfWeek.WEDNESDAY); break;
+                            case "TH": byDays.add(DayOfWeek.THURSDAY); break;
+                            case "FR": byDays.add(DayOfWeek.FRIDAY); break;
+                            case "SA": byDays.add(DayOfWeek.SATURDAY); break;
+                            case "SU": byDays.add(DayOfWeek.SUNDAY); break;
+                        }
+                    }
+                    break;
             }
         }
 
@@ -457,6 +477,20 @@ public class ScheduledTransactionService {
             case "DAILY":
                 return base.plusDays(interval);
             case "WEEKLY":
+                if (!byDays.isEmpty()) {
+                    DayOfWeek baseDow = base.getDayOfWeek();
+
+                    // ✅ 이미 패턴 위에 올라간 상태 (예: 화요일에 실행 완료 후)
+                    if (byDays.contains(baseDow)) {
+                        // INTERVAL 주 뒤 같은 요일/시간으로 점프
+                        return base.plusWeeks(interval);
+                    }
+
+                    // ✅ 아직 패턴에 정렬되지 않은 첫 실행(또는 특수 케이스)
+                    //    → 그냥 가장 가까운 다음 BYDAY로 한 번만 맞춰줌
+                    return alignToNextByDay(base, byDays);
+                }
+                // BYDAY 없으면 그냥 interval 주 뒤로
                 return base.plusWeeks(interval);
             case "MONTHLY":
                 if (byMonthDay != null) {
@@ -478,6 +512,64 @@ public class ScheduledTransactionService {
                 return null;
         }
     }
+    // base 이후 7일 이내에서 BYDAY 중 가장 가까운 날짜로 맞춰줌
+    private LocalDateTime alignToNextByDay(LocalDateTime base, List<DayOfWeek> byDays) {
+        // 월(1) ~ 일(7) 순으로 정렬
+        byDays.sort(Comparator.comparingInt(DayOfWeek::getValue));
+
+        LocalDateTime candidate = base.plusDays(1); // base 바로 다음 날부터 탐색
+        for (int i = 0; i < 7; i++) {
+            DayOfWeek dow = candidate.getDayOfWeek();
+            if (byDays.contains(dow)) {
+                return candidate.withHour(base.getHour())
+                        .withMinute(base.getMinute())
+                        .withSecond(base.getSecond())
+                        .withNano(base.getNano());
+            }
+            candidate = candidate.plusDays(1);
+        }
+
+        // 혹시 못 찾으면(이론상 거의 없음) 일주일 뒤 같은 요일로
+        return base.plusWeeks(1);
+    }
+
+    private LocalDateTime nextWeeklyByDay(LocalDateTime base,
+                                          int interval,
+                                          List<DayOfWeek> byDays) {
+
+        // 월(1) ~ 일(7) 순으로 정렬
+        byDays.sort(java.util.Comparator.comparingInt(DayOfWeek::getValue));
+
+        // 🔹 기준 주: base 날짜에서 interval 주 뒤
+        LocalDate anchorDate = base.toLocalDate().plusWeeks(interval);
+        LocalTime time = base.toLocalTime();
+        DayOfWeek anchorDow = anchorDate.getDayOfWeek();
+
+        // 🔹 anchor 주 안에서 BYDAY 중 anchorDow 이후(또는 같은 날) 중 가장 빠른 요일 찾기
+        DayOfWeek chosenDow = null;
+        for (DayOfWeek d : byDays) {
+            if (d.getValue() >= anchorDow.getValue()) {
+                chosenDow = d;
+                break;
+            }
+        }
+
+        LocalDate candidateDate;
+        if (chosenDow != null) {
+            // 같은 주 안에서 앞으로 몇 일 더 가야 하는지
+            int diff = chosenDow.getValue() - anchorDow.getValue();
+            candidateDate = anchorDate.plusDays(diff);
+        } else {
+            // anchor 주 안에 적당한 요일이 없으면, 다음 주로 넘어가서 BYDAY 중 가장 이른 요일 사용
+            DayOfWeek firstDow = byDays.get(0);
+            int diffToNextWeek = 7 - anchorDow.getValue() + firstDow.getValue();
+            candidateDate = anchorDate.plusDays(diffToNextWeek);
+        }
+
+        return LocalDateTime.of(candidateDate, time);
+    }
+
+
 
     private LocalDateTime calculateNextRunAt(Frequency frequency, String rrule,LocalDateTime base) {
         if (frequency == null) return null;
