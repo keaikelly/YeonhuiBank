@@ -81,4 +81,14 @@ public class ScheduledTransactionExceptionHandler {
 
         );
     }
+
+    @ExceptionHandler(ScheduledTransactionException.ScheduledTransactionAreadyRunningException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidLogArgument(ScheduledTransactionException.ScheduledTransactionAreadyRunningException ex) {
+        return new ResponseEntity<>(
+                ApiResponse.onFailure(Status.SCHEDULED_TRANSACTION_NOT_FOUND),
+                HttpStatus.NOT_FOUND
+
+        );
+    }
+
 }

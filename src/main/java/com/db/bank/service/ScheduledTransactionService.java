@@ -267,6 +267,11 @@ public class ScheduledTransactionService {
     public void runNow(Long userId, Long scheduleId) {
         // 1. 예약이체 소유자 + 존재 여부 검증
         ScheduledTransaction schedule = getScheduleDetail(userId, scheduleId);
+        if (schedule.getScheduledStatus() == ScheduledStatus.RUNNING) {
+            throw new ScheduledTransactionException.InvalidScheduleStatusForPauseException(
+                    "ACTIVE 상태의 예약이체만 즉시 실행할 수 있습니다."
+            );
+        }
 
         // 2. 상태 검사 (원하면 ACTIVE일 때만 허용)
         if (schedule.getScheduledStatus() != ScheduledStatus.ACTIVE) {
@@ -284,8 +289,10 @@ public class ScheduledTransactionService {
      * 예약이체 1건을 지금(now) 기준으로 실행하는 공통 로직
      * - runDueSchedules / runNow 둘 다 여기로 모아서 사용
      */
-    @Transactional
+
     protected void executeSchedule(ScheduledTransaction schedule, LocalDateTime now) {
+        // 다른 쓰레드가 동시에 집지 않도록 RUNNING 표시
+        schedule.setScheduledStatus(ScheduledStatus.RUNNING);
         try {
             // 1) 실제 계좌 이체
             Transaction tx = transactionService.transfer(
@@ -307,6 +314,7 @@ public class ScheduledTransactionService {
             // 3) 실행 시간 갱신 + 다음 실행 시각 계산
             schedule.setLastRunAt(now);
             schedule.setNextRunAt(recalculateNextRunAt(schedule));
+            schedule.setScheduledStatus(ScheduledStatus.ACTIVE); // 또는 COMPLETED
 
         }catch (AccountException.InsufficientBalanceException e) {
 
@@ -331,6 +339,7 @@ public class ScheduledTransactionService {
 
             schedule.setLastRunAt(now);
             schedule.setNextRunAt(nextRetryAt);
+            schedule.setScheduledStatus(ScheduledStatus.ACTIVE); // 또는 COMPLETED
 
             // ❗지금처럼 409 응답을 유지하고 싶으면 다시 던져줌
             throw e;

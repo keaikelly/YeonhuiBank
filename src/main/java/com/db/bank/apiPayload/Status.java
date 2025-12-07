@@ -27,6 +27,7 @@ public enum Status {
     SCHEDULED_TRANSACTION_FORBIDDEN("403", "FAILURE", "접근 불가 예약이체입니다."),
     INVALID_SCHEDULED_TRANSACTION_TIME("400", "FAILURE", "예약 실행 시간이 올바르지 않습니다."),
     SCHEDULED_TRANSACTION_ALREADY_FINISHED("409", "FAILURE", "이미 종료된 예약이체입니다."),
+    SCHEDULED_TRANSACTION_ALREADY_RUNNING("409", "FAILURE", "이미 실행 중인 예약이체입니다."),
     INVALID_SCHEDULE_STATUS_FOR_PAUSE("409", "FAILURE", "ACTIVE 상태의 예약이체만 가능합니다."),
     INVALID_SCHEDULE_STATUS_FOR_RESUME("409", "FAILURE", "PAUSED 상태의 예약이체만 재개할 수 있습니다."),
     SCHEDULED_TRANSACTION_NOT_FOUND("404", "FAILURE", "예약이체를 찾을 수 없습니다."),

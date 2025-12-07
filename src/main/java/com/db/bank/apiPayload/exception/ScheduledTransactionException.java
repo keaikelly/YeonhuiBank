@@ -53,6 +53,11 @@ public class ScheduledTransactionException extends RuntimeException{
             super(message);
         }
     }
+    public static class ScheduledTransactionAreadyRunningException extends ScheduledTransactionException {
+        public ScheduledTransactionAreadyRunningException(String message) {
+            super(message);
+        }
+    }
 
 
 

@@ -27,7 +27,7 @@ public class ScheduledTransferRunService {
 
 
     // 1) 실행 로그 기록 (공통)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional//(propagation = Propagation.REQUIRES_NEW)
     public ScheduledTransferRun recordRun(
             ScheduledTransaction schedule,
             Transaction txnOut,
@@ -70,7 +70,7 @@ public class ScheduledTransferRunService {
     }
 
     // 성공 케이스 편의 메서드 (retry 0, failureReasonCode 없음)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional //(propagation = Propagation.REQUIRES_NEW)
     public ScheduledTransferRun recordSuccess(
             ScheduledTransaction schedule,
             Transaction txnOut,
@@ -92,7 +92,7 @@ public class ScheduledTransferRunService {
     }
 
     // 실패/재시도 케이스 편의 메서드
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional//(propagation = Propagation.REQUIRES_NEW)
     public ScheduledTransferRun recordFailure(
             ScheduledTransaction schedule,
             Transaction txnOut,
