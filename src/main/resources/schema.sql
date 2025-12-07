@@ -13,11 +13,11 @@ VALUES
 
 --  시스템 입금 전용 계좌
 INSERT INTO account (account_num, balance, account_type, created_at, user_id)
-VALUES ('999-000', 0, 'EXTERNAL_IN', NOW(), 1);
+VALUES ('999-000', 10000000, 'EXTERNAL_IN', NOW(), 1);
 
 --  시스템 출금 전용 계좌
 INSERT INTO account (account_num, balance, account_type, created_at, user_id)
-VALUES ('999-111', 0, 'EXTERNAL_OUT', NOW(), 1);
+VALUES ('999-111', 10000000, 'EXTERNAL_OUT', NOW(), 1);
 
 -- check
 ALTER TABLE account
