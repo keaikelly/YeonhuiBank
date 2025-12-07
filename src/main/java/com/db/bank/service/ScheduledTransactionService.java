@@ -39,7 +39,7 @@ public class ScheduledTransactionService {
     public ScheduledTransaction createSchedule(
             Long userId,
             Long fromAccountId,
-            Long toAccountId,
+            String toAccountNum,
             BigDecimal amount,
             Frequency frequency,
             LocalDate startDate,
@@ -66,8 +66,8 @@ public class ScheduledTransactionService {
         Account fromAccount = accountRepository.findById(fromAccountId)
                 .orElseThrow(() -> new AccountException.AccountNonExistsException("출금 계좌를 찾을 수 없습니다. id=" + fromAccountId));
 
-        Account toAccount = accountRepository.findById(toAccountId)
-                .orElseThrow(() -> new AccountException.AccountNonExistsException("입금 계좌를 찾을 수 없습니다. id=" + toAccountId));
+        Account toAccount = accountRepository.findByAccountNum(toAccountNum)
+                .orElseThrow(() -> new AccountException.AccountNonExistsException("입금 계좌를 찾을 수 없습니다. Num=" + toAccountNum));
 
         // 출금 계좌 소유자 검증
         if (!fromAccount.getUser().getId().equals(userId)) {
@@ -76,7 +76,7 @@ public class ScheduledTransactionService {
 
         // 중복 예약이체 존재 여부 체크
         boolean exists = scheduledTransactionRepository
-                .existsByFromAccountIdAndToAccountIdAndScheduledStatus(fromAccountId, toAccountId, ScheduledStatus.ACTIVE);
+                .existsByFromAccountIdAndToAccountIdAndScheduledStatus(fromAccountId, toAccount.getId(), ScheduledStatus.ACTIVE);
         if (exists) {
 
             throw new ScheduledTransactionException.ScheduledTransactionAlreadyExistsException("동일한 출금/입금 계좌로 이미 활성화된 예약이체가 존재합니다.");

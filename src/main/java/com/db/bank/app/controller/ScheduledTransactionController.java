@@ -56,7 +56,7 @@ public class ScheduledTransactionController {
         ScheduledTransaction st = scheduledTransactionService.createSchedule(
                 user.getId(),
                 req.getFromAccountId(),
-                req.getToAccountId(),
+                req.getToAccountNum(),
                 req.getAmount(),
                 req.getFrequency(),
                 req.getStartDate(),

@@ -22,7 +22,7 @@ public class ScheduledTransactionDto {
     public static class ScheduledTransactionCreateRequest {
 
         private Long fromAccountId;
-        private Long toAccountId;
+        private String toAccountNum;
         private BigDecimal amount;
         private Frequency frequency;
 
