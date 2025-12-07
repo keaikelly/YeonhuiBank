@@ -25,6 +25,21 @@ public class ScheduledTransferRunService {
     private final ScheduledTransferRunRepository runRepository;
     private final ScheduledTransactionRepository scheduledTransactionRepository;
 
+    private ScheduledTransaction getOwnedSchedule(Long userId, Long scheduleId) {
+        ScheduledTransaction schedule = scheduledTransactionRepository.findById(scheduleId)
+                .orElseThrow(() ->
+                        new ScheduledTransactionException.ScheduledTransactionNotFoundException(
+                                "예약이체를 찾을 수 없습니다. id=" + scheduleId
+                        )
+                );
+
+        if (!schedule.getCreatedBy().getId().equals(userId)) {
+            throw new ScheduledTransactionException.UnauthorizedScheduledTransaction(
+                    "해당 예약이체에 접근 권한이 없습니다."
+            );
+        }
+        return schedule;
+    }
 
     // 1) 실행 로그 기록 (공통)
     @Transactional//(propagation = Propagation.REQUIRES_NEW)
@@ -124,27 +139,31 @@ public class ScheduledTransferRunService {
     // 특정 예약이체의 실행 로그 (최신순, 페이징)
     @Transactional(readOnly = true)
     public List<ScheduledTransferRun> getRunsBySchedule(
+            Long userId,
             Long scheduleId,
             Pageable pageable
     ) {
+        ScheduledTransaction schedule = getOwnedSchedule(userId, scheduleId);
         // 스케줄이 실제 존재하는지 체크(옵션)
-        scheduledTransactionRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 예약이체를 찾을 수 없습니다. id=" + scheduleId));
+        scheduledTransactionRepository.findById(schedule.getId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 예약이체를 찾을 수 없습니다. id=" + schedule.getId()));
 
-        return runRepository.findByScheduleIdOrderByExecutedAtDesc(scheduleId);
+        return runRepository.findByScheduleIdOrderByExecutedAtDesc(schedule.getId());
     }
 
     // 특정 예약이체 + 결과 기준 실행 로그 (성공만, 실패만 등)
     @Transactional(readOnly = true)
     public List<ScheduledTransferRun> getRunsByScheduleAndResult(
+            Long userId,
             Long scheduleId,
             RunResult result,
             Pageable pageable
     ) {
-        scheduledTransactionRepository.findById(scheduleId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 예약이체를 찾을 수 없습니다. id=" + scheduleId));
+        ScheduledTransaction schedule = getOwnedSchedule(userId, scheduleId);
+        scheduledTransactionRepository.findById(schedule.getId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 예약이체를 찾을 수 없습니다. id=" + schedule.getId()));
 
-        return runRepository.findByScheduleIdAndResultOrderByExecutedAtDesc(scheduleId, result);
+        return runRepository.findByScheduleIdAndResultOrderByExecutedAtDesc(schedule.getId(), result);
     }
 
 

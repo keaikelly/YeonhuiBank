@@ -82,7 +82,19 @@ public class ScheduledTransactionService {
             throw new ScheduledTransactionException.ScheduledTransactionAlreadyExistsException("동일한 출금/입금 계좌로 이미 활성화된 예약이체가 존재합니다.");
         }
 
-        LocalDateTime firstRunAt = startDate.atTime(runTime);
+        //LocalDateTime firstRunAt = startDate.atTime(runTime);
+        LocalDateTime firstRunAt;
+        if (frequency == Frequency.CUSTOM
+                && rruleString != null
+                && rruleString.contains("FREQ=MINUTELY")) {
+
+            // 1분 단위 커스텀: 지금 기준 + 1분
+            firstRunAt = LocalDateTime.now().plusMinutes(1);
+        }
+        else {
+            // 나머지: startDate + runTime
+            firstRunAt = startDate.atTime(runTime);
+        }
 
         ScheduledTransaction schedule = ScheduledTransaction.builder()
                 .fromAccount(fromAccount)
@@ -436,6 +448,8 @@ public class ScheduledTransactionService {
         if (interval == null) interval = 1;
 
         switch (freq) {
+            case "MINUTELY":
+                return base.plusMinutes(interval);
             case "DAILY":
                 return base.plusDays(interval);
             case "WEEKLY":
