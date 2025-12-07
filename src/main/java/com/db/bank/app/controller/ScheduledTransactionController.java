@@ -172,6 +172,7 @@ public class ScheduledTransactionController {
                 scheduleId,
                 req.getAmount(),
                 req.getFrequency(),
+                req.getRruleString(),
                 req.getStartDate(),
                 req.getEndDate(),
                 req.getMemo()

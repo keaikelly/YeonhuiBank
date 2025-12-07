@@ -45,6 +45,7 @@ public class ScheduledTransactionDto {
     public static class ScheduledTransactionUpdateRequest {
         private BigDecimal amount;
         private Frequency frequency;
+        private String rruleString;
         private LocalDate startDate;
         private LocalDate endDate;
         private String memo;

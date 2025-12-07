@@ -174,6 +174,7 @@ public class ScheduledTransactionService {
             Long scheduleId,
             BigDecimal amount,
             Frequency frequency,
+            String rruleString,
             LocalDate startDate,
             LocalDate endDate,
             String memo
@@ -194,6 +195,9 @@ public class ScheduledTransactionService {
 
         if (frequency != null) {
             schedule.setFrequency(frequency);
+        }
+        if (rruleString != null) {
+            schedule.setRrule(rruleString);
         }
 
         if (startDate != null) {

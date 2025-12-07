@@ -71,6 +71,7 @@ CREATE INDEX ix_run_result_time ON `SCHEDULED_TRANSFER_RUN`(`result`,`executed_a
 
 -- trigger
 -- amount > 0, from/to NULL 체크, 동일계좌 금지 밑의 트리거는 mysql 에서 직접 한 번 실행
+-- USE bank_db;
 -- DELIMITER $$
 --
 -- CREATE TRIGGER trg_tx_before_insert
@@ -78,17 +79,20 @@ CREATE INDEX ix_run_result_time ON `SCHEDULED_TRANSFER_RUN`(`result`,`executed_a
 --     FOR EACH ROW
 -- BEGIN
 --     IF NEW.from_account_num IS NULL OR NEW.to_account_num IS NULL THEN
---         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '입출금 계좌는 NULL일 수 없습니다.';
+--         SIGNAL SQLSTATE '45000'
+--             SET MESSAGE_TEXT = '입출금 계좌는 NULL일 수 없습니다.';
 -- END IF;
 --
 -- IF NEW.amount <= 0 THEN
---         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '이체 금액은 0보다 커야 합니다.';
+--         SIGNAL SQLSTATE '45000'
+--             SET MESSAGE_TEXT = '이체 금액은 0보다 커야 합니다.';
 -- END IF;
 --
 --     IF NEW.from_account_num IS NOT NULL
 --        AND NEW.to_account_num IS NOT NULL
 --        AND NEW.from_account_num = NEW.to_account_num THEN
---         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '출금/입금 계좌는 서로 달라야 합니다.';
+--         SIGNAL SQLSTATE '45000'
+--             SET MESSAGE_TEXT = '출금/입금 계좌는 서로 달라야 합니다.';
 -- END IF;
 -- END$$
 --
