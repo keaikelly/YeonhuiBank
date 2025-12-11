@@ -181,7 +181,7 @@ public class ScheduledTransferRunService {
     @Transactional(readOnly = true)
     public List<ScheduledTransferRun> getMyFailures(Long userId, Long scheduleId) {
 
-        // 1️⃣ 예약이 존재하는지 체크
+        // 예약이 존재하는지 체크
         ScheduledTransaction schedule = scheduledTransactionRepository.findById(scheduleId)
                 .orElseThrow(() ->
                         new ScheduledTransactionException.ScheduledTransactionNotFoundException(
@@ -189,14 +189,14 @@ public class ScheduledTransferRunService {
                         )
                 );
 
-        // 2️⃣ 이 예약이 진짜 이 유저의 것인지 검증 (권한 체크)
+        // 이 예약이 진짜 이 유저의 것인지 검증 (권한 체크)
         if (!schedule.getCreatedBy().getId().equals(userId)) {
             throw new ScheduledTransactionException.UnauthorizedScheduledTransaction(
                     "해당 예약이체에 접근 권한이 없습니다."
             );
         }
 
-        // 3️⃣ 이 예약에 대한 실패 실행 로그만 조회
+        // 이 예약에 대한 실패 실행 로그만 조회
         return runRepository.findByScheduleIdAndResultNotOrderByExecutedAtDesc(
                 schedule.getId(),
                 RunResult.SUCCESS

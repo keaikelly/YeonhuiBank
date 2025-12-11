@@ -12,9 +12,12 @@ import com.db.bank.repository.AccountRepository;
 import com.db.bank.repository.ScheduledTransactionRepository;
 import com.db.bank.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.internal.util.stereotypes.Lazy;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -36,6 +39,7 @@ public class ScheduledTransactionService {
     private final TransactionService transactionService;
     private final ScheduledTransferRunService scheduledTransferRunService;
     private final TransferFailureReasonService failureReasonService;
+    private final ApplicationContext applicationContext;
     // ================== 1. 예약이체 생성 ==================
 
     @Transactional
@@ -278,8 +282,24 @@ public class ScheduledTransactionService {
                 );
 
         for (ScheduledTransaction schedule : dueList) {
-            executeSchedule(schedule, now);
+            try {
+                ScheduledTransactionService proxy =
+                        applicationContext.getBean(ScheduledTransactionService.class);
+                proxy.executeScheduleInNewTransaction(schedule, now);
+            } catch (Exception e) {
+                System.err.println("[예약이체 실패] scheduleId=" + schedule.getId());
+            }
         }
+    }
+
+    /**
+     * 각 예약이체를 독립적인 트랜잭션으로 실행
+     * - REQUIRES_NEW: 부모 트랜잭션과 무관하게 새로운 트랜잭션 생성
+     * - 이 트랜잭션 내에서 예외가 발생해도 부모 트랜잭션에 영향 없음
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void executeScheduleInNewTransaction(ScheduledTransaction schedule, LocalDateTime now) {
+        executeSchedule(schedule, now, false);
     }
 
     @Transactional
@@ -301,20 +321,20 @@ public class ScheduledTransactionService {
 
         // 3. 지금 시각 기준으로 한 번 실행
         LocalDateTime now = LocalDateTime.now();
-        executeSchedule(schedule, now);
+        executeSchedule(schedule, now,true);
     }
 
     /**
-     * 예약이체 1건을 지금(now) 기준으로 실행하는 공통 로직
-     * - runDueSchedules / runNow 둘 다 여기로 모아서 사용
+     * true  → 실패 시 예외 다시 던짐(runNow 용)
+     * false → 실패 로그만 남기고 예외 삼킴(배치용)
      */
 
-    protected void executeSchedule(ScheduledTransaction schedule, LocalDateTime now) {
+    protected void executeSchedule(ScheduledTransaction schedule, LocalDateTime now,  boolean propagateException) {
         // 다른 쓰레드가 동시에 집지 않도록 RUNNING 표시
         schedule.setScheduledStatus(ScheduledStatus.RUNNING);
         try {
             // 1) 실제 계좌 이체
-            Transaction tx = transactionService.transfer(
+            Transaction tx = transactionService.transferForSchedule(
                     schedule.getCreatedBy().getId(),
                     schedule.getFromAccount().getAccountNum(),
                     schedule.getToAccount().getAccountNum(),
@@ -358,12 +378,14 @@ public class ScheduledTransactionService {
 
             schedule.setLastRunAt(now);
             schedule.setNextRunAt(nextRetryAt);
-            schedule.setScheduledStatus(ScheduledStatus.ACTIVE); // 또는 COMPLETED
+            schedule.setScheduledStatus(ScheduledStatus.ACTIVE);
 
-            // ❗지금처럼 409 응답을 유지하고 싶으면 다시 던져줌
-            throw e;
+            if (propagateException) {
+                // runNow에서는 409 응답을 위해 다시 던짐
+                throw e;
+            }
 
-            // 🔹 그 외 우리가 정의한 TransactionException 처리 (한도 초과 등)
+            //그 외 우리가 정의한 TransactionException 처리 (한도 초과 등)
         }  catch (TransactionException e) {
             // 4) 실패 케이스 처리 (처음 실패 기준으로 retryNo=0)
             int retryNo = 0;
@@ -398,6 +420,11 @@ public class ScheduledTransactionService {
             // 스케줄에 실패/다음 재시도 시간 반영
             schedule.setLastRunAt(now);
             schedule.setNextRunAt(nextRetryAt);
+            schedule.setScheduledStatus(ScheduledStatus.ACTIVE);
+
+            if (propagateException) {
+                throw e;
+            }
         }
     }
 

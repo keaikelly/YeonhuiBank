@@ -4,6 +4,7 @@ import com.db.bank.apiPayload.ApiResponse;
 import com.db.bank.apiPayload.Status;
 import com.db.bank.app.dto.ScheduledTransferRunDto;
 import com.db.bank.domain.entity.ScheduledTransferRun;
+import com.db.bank.domain.entity.TransferFailureReason;
 import com.db.bank.domain.enums.scheduledTransaction.RunResult;
 import com.db.bank.security.CustomUserDetails;
 import com.db.bank.service.ScheduledTransferRunService;
@@ -68,6 +69,7 @@ public class ScheduledTransferRunController {
     // Entity → DTO 변환
     // ==========================
     private ScheduledTransferRunDto.ScheduledTransferRunResponse toResponse(ScheduledTransferRun run) {
+        TransferFailureReason reason = run.getFailureReason();
         return ScheduledTransferRunDto.ScheduledTransferRunResponse.builder()
                 .runId(run.getId())
                 .scheduleId(run.getSchedule().getId())
@@ -76,8 +78,8 @@ public class ScheduledTransferRunController {
                 .message(run.getMessage())
                 .txnOutId(run.getTxnOut() != null ? run.getTxnOut().getId() : null)
                 .txnInId(run.getTxnIn() != null ? run.getTxnIn().getId() : null)
-                .failureReason(run.getFailureReason())
-                .retryNo(run.getRetryNo())
+                .failureReasonCode(reason != null ? reason.getReasonCode() : null)
+                .failureReasonDesc(reason != null ? reason.getDescription() : null)
                 .maxRetries(run.getMaxRetries())
                 .nextRetryAt(run.getNextRetryAt())
                 .build();

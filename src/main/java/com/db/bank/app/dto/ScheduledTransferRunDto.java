@@ -27,7 +27,8 @@ public class ScheduledTransferRunDto {
         private Long txnOutId;
         private Long txnInId;
 
-        private TransferFailureReason failureReason;
+        private String failureReasonCode;
+        private String failureReasonDesc;
 
         private int retryNo;
         private int maxRetries;

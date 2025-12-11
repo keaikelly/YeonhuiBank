@@ -160,6 +160,27 @@ public class TransactionService {
             BigDecimal amount,
             String memo
     ) {
+        return doTransfer(userId, fromAccountNum, toAccountNum, amount, memo);
+    }
+
+    @Transactional(noRollbackFor = AccountException.InsufficientBalanceException.class)
+    public Transaction transferForSchedule(
+            Long userId,
+            String fromAccountNum,
+            String toAccountNum,
+            BigDecimal amount,
+            String memo
+    ) {
+
+        return doTransfer(userId, fromAccountNum, toAccountNum, amount, memo);
+    }
+    private Transaction doTransfer(
+            Long userId,
+            String fromAccountNum,
+            String toAccountNum,
+            BigDecimal amount,
+            String memo
+    ) {
         validateAmount(amount);
         if (fromAccountNum.equals(toAccountNum)) {
             throw new AccountException.InvalidAccountArgumentException("출금 계좌와 입금 계좌가 같을 수 없습니다.");
