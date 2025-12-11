@@ -40,7 +40,7 @@ public class ScheduledTaskConfig {
      * - retry_no < maxRetries
      * - next_retry_at <= now
      */
-    @Scheduled(cron = "30 */5 * * * *")  // 매 5분마다 30초에
+    @Scheduled(cron = "30 */1 * * * *")  // 매 5분마다 30초에
     public void retryFailedScheduledTransfers() {
 
         LocalDateTime now = LocalDateTime.now();
@@ -77,18 +77,9 @@ public class ScheduledTaskConfig {
                 int nextRetry = run.getRetryNo() + 1;
                 LocalDateTime nextRetryAt = now.plusMinutes(10);
 
-                // --- 🔻 실패 사유 코드 매핑 로직 🔻 ---
+                // 실패 사유 코드 매핑 로직
                 TransferFailureReason reason;
 
-                /*
-                 * ⚠ 여기 나오는 예외 타입들은 전부 "예시"야.
-                 * 실제 프로젝트에서 사용하는 예외 이름으로 바꿔야 해.
-                 *
-                 * 예)
-                 *  - 잔액 부족       → AccountException.InsufficientBalanceException
-                 *  - 계좌 잠김       → AccountException.AccountLockedException
-                 *  - 이체 한도 초과  → TransferLimitException.DailyLimitExceededException
-                 */
                 if (e instanceof TransactionException.InsufficientFundsException) {
                     // 잔액 부족
                     reason = failureReasonService.getReason("INSUFFICIENT_FUNDS");
