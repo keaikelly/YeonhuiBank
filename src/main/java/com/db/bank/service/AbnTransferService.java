@@ -14,6 +14,7 @@ import com.db.bank.repository.TransactionRepository;
 import com.db.bank.repository.TransferLimitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -50,35 +51,43 @@ public class AbnTransferService {
         return abnTransferRepository.save(abnTransfer);
 
     }
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public AbnTransfer createAbnTransferWithoutTx(
+            String accountNum,
+            RuleCode ruleCode,
+            String detailMessage
+    ) {
+        Account account = accountRepository.findByAccountNum(accountNum)
+                .orElseThrow(() -> new AccountException.AccountNonExistsException("존재하지 않는 계좌입니다"));
+
+        AbnTransfer abnTransfer = AbnTransfer.builder()
+                .transactionId(null) // 여기서만 NULL 허용
+                .accountNum(account)
+                .ruleCode(ruleCode)
+                .detailMessage(detailMessage)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return abnTransferRepository.save(abnTransfer);
+    }
 
     @Transactional
     public void preCheckAbnTransfer(Account from, Account to, BigDecimal amount) {
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime ago10 = now.minusMinutes(10);
+        String fromAcc = from.getAccountNum();
+        String toAcc   = to.getAccountNum();
 
-        // 1. 최근 동일 거래 3건 이상
-        Long count = transactionRepository.sameTransfer(
-                from.getAccountNum(),
-                to.getAccountNum(),
-                amount,
-                ago10
-        );
-        if (count >= 3) {
-            createAbnTransfer(null, from.getAccountNum(), RuleCode.MULTI_TRANSFER_SAME_ACCOUNT, "10분내 동일거래 3건 이상");
-        }
 
-        // 2. 일일 한도 초과
-        BigDecimal today = transactionRepository.getTotalTransferredToday(
-                from.getAccountNum(),
-                now.toLocalDate().atStartOfDay(),
-                now
-        );
 
-        //오늘 이체 내역이 없으면 null → 0원으로 처리
-        if (today == null) {
-            today = BigDecimal.ZERO;
-        }
+        // 일일 한도 초과 → 알림 + 예외(트랜잭션 생성 자체를 차단)
+        BigDecimal today = Optional.ofNullable(
+                transactionRepository.getTotalTransferredToday(
+                        fromAcc,
+                        now.toLocalDate().atStartOfDay(),
+                        now
+                )
+        ).orElse(BigDecimal.ZERO);
 
         Optional<TransferLimit> limitOpt =
                 transferLimitRepository.findOneByAccountAndStatus(from, TransferStatus.ACTIVE);
@@ -86,56 +95,62 @@ public class AbnTransferService {
         if (limitOpt.isPresent()
                 && today.add(amount).compareTo(limitOpt.get().getDailyLimitAmt()) > 0) {
 
+            // 알림 로그 (트랜잭션 없이)
+            createAbnTransferWithoutTx(
+                    fromAcc,
+                    RuleCode.DAILY_TOTAL_EXCEEDED,
+                    "일일 이체 한도 초과"
+            );
+
+            // 실제 비즈니스 로직 차단
             throw new TransactionException.IllegalTransferException("일일 이체 한도 초과");
         }
+    }
+    @Transactional
+    public void postCheckAbnTransfer(Transaction tx) {
 
-        // 3. 처음 보내는 수취인
-        if (transactionRepository.countHistoryBetweenAccounts(
-                from.getAccountNum(),
-                to.getAccountNum()
-        ) == 0) {
-            createAbnTransfer(null, from.getAccountNum(), RuleCode.NEW_RECEIVER, "처음 보내는 수취인 계좌");
+        String fromAcc = tx.getFromAccount().getAccountNum();
+        String toAcc   = tx.getToAccount().getAccountNum();
+        BigDecimal amount = tx.getAmount();
+        LocalDateTime now = tx.getCreatedAt() != null
+                ? tx.getCreatedAt()
+                : LocalDateTime.now();
+
+        LocalDateTime ago10 = now.minusMinutes(10);
+
+        // 1) 최근 10분 내 동일 거래 3건 이상 → 트랜잭션 포함해서 로그 남김
+        Long count = transactionRepository.sameTransfer(
+                fromAcc,
+                toAcc,
+                amount,
+                ago10
+        );
+        if (count >= 3) {
+            createAbnTransfer(
+                    tx.getId(),
+                    fromAcc,
+                    RuleCode.MULTI_TRANSFER_SAME_ACCOUNT,
+                    "10분내 동일거래 3건 이상"
+            );
+        }
+
+        // 2) 처음 보내는 수취인 → 트랜잭션 포함해서 로그 남김
+        Long history = transactionRepository.countHistoryBetweenAccounts(fromAcc, toAcc);
+        if (history == 1) {
+            createAbnTransfer(
+                    tx.getId(),
+                    fromAcc,
+                    RuleCode.NEW_RECEIVER,
+                    "처음 보내는 수취인 계좌"
+            );
         }
     }
-
-
-    //계좌번호로 이상거래 가져오기
+    //조회
     @Transactional(readOnly = true)
     public List<AbnTransfer> getAllAbnTransfersByAccount(String accountNum) {
         Account account = accountRepository.findByAccountNum(accountNum)
                 .orElseThrow(() -> new AccountException.AccountNonExistsException("계좌를 찾을 수 없습니다."));
         return abnTransferRepository.findAllByAccountNum(account);
-    }
-
-    @Transactional
-    public void detectAbnTransfer(Transaction t){
-        String from=t.getFromAccount().getAccountNum();
-        String to=t.getToAccount().getAccountNum();
-        LocalDateTime now=LocalDateTime.now();
-        LocalDateTime AgoMinute =now.minusMinutes(10); //10분이전으로 지정
-
-        //최근 10분내 동일거래 3회 이상 감지
-        Long count=transactionRepository.sameTransfer(from, to, t.getAmount(), AgoMinute);
-        if(count>=3) createAbnTransfer(t.getId(), from, RuleCode.MULTI_TRANSFER_SAME_ACCOUNT, "10분내 동일거래 3건 이상");
-
-        //일일이체 한도초과
-        LocalDateTime todayStart=now.toLocalDate().atStartOfDay();
-        BigDecimal totalToday=transactionRepository.getTotalTransferredToday(from, todayStart, now);
-        Account fromAccount =t.getFromAccount();
-
-        Optional<TransferLimit> limitOpt =transferLimitRepository.findOneByAccountAndStatus(fromAccount, TransferStatus.ACTIVE);
-
-        if(limitOpt.isPresent()) {
-            BigDecimal dailyLimit = limitOpt.get().getDailyLimitAmt();
-            if (totalToday.compareTo(dailyLimit) > 0) {
-                createAbnTransfer(t.getId(), from, RuleCode.DAILY_TOTAL_EXCEEDED, "일일 이체 한도 초과");
-            }
-        }
-
-        //수취인 첫 계좌 알림
-        Long history= transactionRepository.countHistoryBetweenAccounts(from, to);
-        if(history==0) createAbnTransfer(t.getId(), from, RuleCode.NEW_RECEIVER, "처음 보내는 수취인 계좌");
-
     }
 
 }

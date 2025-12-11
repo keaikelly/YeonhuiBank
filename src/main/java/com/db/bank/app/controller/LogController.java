@@ -106,7 +106,7 @@ public class LogController {
     private LogDto.LogResponse toLogResponse(Log log) {
         return LogDto.LogResponse.builder()
                 .logId(log.getId())
-                .transactionId(log.getTransaction().getId())
+                .transactionId(log.getTransaction() != null ? log.getTransaction().getId() : null)
                 .accountNum(log.getAccount().getAccountNum())
                 .actorUserId(log.getActorUser().getId())
                 .beforeBalance(log.getBeforeBalance())

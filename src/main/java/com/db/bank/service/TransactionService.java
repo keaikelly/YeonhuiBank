@@ -141,7 +141,7 @@ public class TransactionService {
 
         // 로그 기록
         logService.logWithdraw(tx, fromAccount, before, after, actor);
-        abnTransferService.detectAbnTransfer(tx);
+        abnTransferService.postCheckAbnTransfer(tx);
         return tx;
     }
 
@@ -203,11 +203,11 @@ public class TransactionService {
                 .build();
 
         tx = transactionRepository.save(tx);
-
+        abnTransferService.postCheckAbnTransfer(tx);
         // 로그 기록 (보낸 쪽 / 받은 쪽 따로)
         logService.logTransferDebit(tx, fromAccount, fromBefore, fromAfter, actor);
         logService.logTransferCredit(tx, toAccount, toBefore, toAfter, actor);
-        abnTransferService.detectAbnTransfer(tx);
+
         return tx;
     }
 

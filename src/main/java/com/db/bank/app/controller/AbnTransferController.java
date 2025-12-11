@@ -48,9 +48,13 @@ public class AbnTransferController {
     // Entity -> DTO 변환
     // ==========================
     private AbnTransferDto.AbnTransferResponse toResponse(AbnTransfer abn) {
+        Long txId = null;
+        if (abn.getTransactionId() != null) {
+            txId = abn.getTransactionId().getId();
+        }
         return AbnTransferDto.AbnTransferResponse.builder()
                 .alertId(abn.getAlertId())
-                .transactionId(abn.getTransactionId().getId())
+                .transactionId(txId)
                 .accountNum(abn.getAccountNum().getAccountNum())
                 .ruleCode(abn.getRuleCode())
                 .detailMessage(abn.getDetailMessage())
