@@ -412,7 +412,7 @@ public class ScheduledTransactionService {
         // lastRunAt가 있으면 그 기준으로, 없으면 startDate + runTime 기준
         LocalDateTime base = schedule.getLastRunAt();
         if (base == null) {
-            // ⭐ 하드코딩 9시 대신, 엔티티에 저장해 둔 runTime 사용
+            //엔티티에 저장해 둔 runTime 사용
             LocalTime runTime = schedule.getRunTime();
             if (runTime == null) {
                 // 혹시 null이면 기본값은 09:00으로 (방어 코드)
@@ -426,7 +426,7 @@ public class ScheduledTransactionService {
     private LocalDateTime calculateNextRunAtCustom(String rrule, LocalDateTime base) {
         if (rrule == null || rrule.isBlank()) return null;
 
-        // "FREQ=WEEKLY;INTERVAL=2" 같은 문자열 파싱
+        // ex) "FREQ=WEEKLY;INTERVAL=2"
         String[] parts = rrule.split(";");
         String freq = null;
         Integer interval = null;
@@ -480,26 +480,25 @@ public class ScheduledTransactionService {
                 if (!byDays.isEmpty()) {
                     DayOfWeek baseDow = base.getDayOfWeek();
 
-                    // ✅ 이미 패턴 위에 올라간 상태 (예: 화요일에 실행 완료 후)
+                    //이미 한 번 적용한 상태
                     if (byDays.contains(baseDow)) {
                         // INTERVAL 주 뒤 같은 요일/시간으로 점프
                         return base.plusWeeks(interval);
                     }
 
-                    // ✅ 아직 패턴에 정렬되지 않은 첫 실행(또는 특수 케이스)
-                    //    → 그냥 가장 가까운 다음 BYDAY로 한 번만 맞춰줌
+                    // 첫 실행(또는 특수 케이스)
                     return alignToNextByDay(base, byDays);
                 }
                 // BYDAY 없으면 그냥 interval 주 뒤로
                 return base.plusWeeks(interval);
             case "MONTHLY":
                 if (byMonthDay != null) {
-                    // ✅ 아직 패턴 위에 올라가지 않은 첫 정렬 단계
+                    // 첫 실행(또는 특수 케이스)
                     if (!isAlignedToByMonthDay(base, byMonthDay)) {
                         return alignToByMonthDay(base, byMonthDay);
                     }
 
-                    // ✅ 이미 BYMONTHDAY에 맞춰진 상태면 → interval달 뒤 같은 BYMONTHDAY
+                    //이미 한 번 적용한 상태
                     LocalDateTime nextMonth = base.plusMonths(interval);
                     int lastDayOfMonth = nextMonth.toLocalDate().lengthOfMonth();
                     int day = Math.min(byMonthDay, lastDayOfMonth);
@@ -530,13 +529,13 @@ public class ScheduledTransactionService {
             candidate = candidate.plusDays(1);
         }
 
-        // 혹시 못 찾으면(이론상 거의 없음) 일주일 뒤 같은 요일로
+        // 못 찾으면 일주일 뒤 같은 요일로
         return base.plusWeeks(1);
     }
     private boolean isAlignedToByMonthDay(LocalDateTime base, int byMonthDay) {
         LocalDate date = base.toLocalDate();
         int lastDay = date.lengthOfMonth();
-        int effectiveDay = Math.min(byMonthDay, lastDay); // 31일 없는 달 방어
+        int effectiveDay = Math.min(byMonthDay, lastDay); // 31일 없는 달 예외 처리
         return date.getDayOfMonth() == effectiveDay;
     }
     private LocalDateTime alignToByMonthDay(LocalDateTime base, int byMonthDay) {
@@ -584,12 +583,12 @@ public class ScheduledTransactionService {
         // 월(1) ~ 일(7) 순으로 정렬
         byDays.sort(java.util.Comparator.comparingInt(DayOfWeek::getValue));
 
-        // 🔹 기준 주: base 날짜에서 interval 주 뒤
+        //기준 주: base 날짜에서 interval 주 뒤
         LocalDate anchorDate = base.toLocalDate().plusWeeks(interval);
         LocalTime time = base.toLocalTime();
         DayOfWeek anchorDow = anchorDate.getDayOfWeek();
 
-        // 🔹 anchor 주 안에서 BYDAY 중 anchorDow 이후(또는 같은 날) 중 가장 빠른 요일 찾기
+        //anchor 주 안에서 BYDAY 중 anchorDow 이후(또는 같은 날) 중 가장 빠른 요일 찾기
         DayOfWeek chosenDow = null;
         for (DayOfWeek d : byDays) {
             if (d.getValue() >= anchorDow.getValue()) {
